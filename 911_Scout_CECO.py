@@ -46,6 +46,16 @@ st.title("Comparación de Jugadores")
 # URL de la carpeta Ligas en GitHub
 url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Ligas"
 
+# Función para cargar datos CSV con caché
+@st.cache_data
+def cargar_datos_csv(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return pd.read_csv(StringIO(response.text))
+    else:
+        st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
+        return pd.DataFrame()
+
 # Obtener la lista de archivos CSV en la carpeta Ligas
 response = requests.get(url_base)
 if response.status_code == 200:
@@ -54,20 +64,18 @@ if response.status_code == 200:
 else:
     st.error(f"Error al acceder a la carpeta Ligas: {response.status_code}")
 
-# Cargar los archivos CSV desde el repositorio
+# Cargar los archivos CSV desde el repositorio usando la función optimizada con caché
 data_by_season = {}
 available_seasons = set()
 
 for url in file_urls:
-    response = requests.get(url)
-    if response.status_code == 200:
+    data = cargar_datos_csv(url)
+    if not data.empty:
         matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
         if matches:
             for match in matches:
                 available_seasons.add(match)
-        data_by_season[url.split('/')[-1]] = pd.read_csv(StringIO(response.text))
-    else:
-        st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
+        data_by_season[url.split('/')[-1]] = data
 
 # Verificar que hay temporadas disponibles
 if not available_seasons:
@@ -104,24 +112,31 @@ else:
                 posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
                 metricas_filtradas = metricas_por_posicion[posicion]
 
-                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
+                                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
 
+                # Crear una tabla con los logos de los equipos y los nombres de los jugadores
                 logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
                 logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
 
+                # Crear una tabla con las métricas de comparación de los jugadores
                 jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
 
+                # Alinear la tabla de logos con la tabla de métricas para una mejor presentación
                 logos_html.columns = jugadores_comparativos.columns
 
+                # Aplicar formato para resaltar los valores máximos de cada métrica
                 jugadores_comparativos_html = jugadores_comparativos.apply(lambda row: row.apply(
                     lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
                 ), axis=1)
 
+                # Combinar la tabla de logos y la tabla de métricas para la visualización final
                 tabla_final = pd.concat([logos_html, jugadores_comparativos_html])
 
+                # Convertir la tabla a formato HTML y personalizar el estilo
                 html_table = tabla_final.to_html(escape=False, classes='table table-bordered', border=0)
                 html_table = html_table.replace('<th>', '<th style="text-align: center;">')
 
+                # Mostrar la tabla final en la aplicación
                 st.write(html_table, unsafe_allow_html=True)
 
         else:
