@@ -56,16 +56,24 @@ def cargar_datos_csv(url):
         st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
         return pd.DataFrame()
 
-# Obtener la lista de archivos CSV en la carpeta Ligas
-response = requests.get(url_base)
+# Inicializar file_urls
 file_urls = []  # Definimos la variable file_urls para evitar el NameError
 
-if response.status_code == 200:
-    archivos = response.json()
-    # Filtra solo los archivos CSV y almacena sus URLs de descarga
-    file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
-else:
-    st.error(f"Error al acceder a la carpeta Ligas: {response.status_code}")
+# Obtener la lista de archivos CSV en la carpeta Ligas
+try:
+    response = requests.get(url_base)
+    if response.status_code == 200:
+        archivos = response.json()
+        # Filtra solo los archivos CSV y almacena sus URLs de descarga
+        file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
+    else:
+        st.error(f"Error al acceder a la carpeta Ligas: {response.status_code}")
+except requests.RequestException as e:
+    st.error(f"Error de red al intentar acceder a la carpeta Ligas: {e}")
+
+# Verificar que file_urls esté definido antes de su uso
+if not file_urls:
+    st.error("No se encontraron archivos CSV en la carpeta Ligas.")
 
 # Ahora podemos usar file_urls sin preocuparnos de que no esté definida
 data_by_season = {}
@@ -148,3 +156,4 @@ else:
 
         else:
             st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
+
