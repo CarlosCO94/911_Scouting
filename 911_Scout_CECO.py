@@ -1,89 +1,108 @@
 import streamlit as st
 import pandas as pd
 import re  # Para usar expresiones regulares
+import requests
+from io import StringIO
 
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
-# Diccionario de métricas por posición (sin cambios)
+# Diccionario de métricas por posición
 metricas_por_posicion = {
-    'Portero': ["Conceded goals per 90", "xG against per 90", "Prevented goals per 90", "Save rate, %", 
+    'Portero': ["Matches played", "Minutes played", "Conceded goals per 90", "xG against per 90", "Prevented goals per 90", "Save rate, %", 
                 "Exits per 90", "Aerial duels per 90", "Back passes received as GK per 90", 
                 "Accurate passes, %", "Accurate forward passes, %", "Accurate long passes, %"],
-    'Defensa': ["Accelerations per 90", "Progressive runs per 90", "Aerial duels per 90", "Aerial duels won, %", 
+    'Defensa': ["Matches played", "Minutes played", "Accelerations per 90", "Progressive runs per 90", "Aerial duels per 90", "Aerial duels won, %", 
                 "Defensive duels won, %", "Duels won, %", "Sliding tackles per 90", "Interceptions per 90", 
                 "Key passes per 90", "Short / medium passes per 90", "Forward passes per 90", "Long passes per 90", 
                 "Passes per 90", "PAdj Interceptions", "Accurate passes to final third, %", "Accurate forward passes, %", 
                 "Accurate back passes, %", "Accurate long passes, %", "Accurate passes, %"],
-    'Lateral': ["Successful attacking actions per 90", "Successful defensive actions per 90", "Accelerations per 90", 
+    'Lateral': ["Matches played", "Minutes played", "Successful attacking actions per 90", "Successful defensive actions per 90", "Accelerations per 90", 
                 "Progressive runs per 90", "Crosses to goalie box per 90", "Crosses from final third per 90", 
                 "Aerial duels won, %", "Offensive duels won, %", "Defensive duels won, %", "Defensive duels per 90", 
                 "Duels won, %", "Interceptions per 90", "Passes per 90", "Forward passes per 90", 
                 "Accurate passes to penalty area, %", "Received passes per 90", "Accurate passes to final third, %", 
                 "Accurate through passes, %", "Accurate forward passes, %", "Accurate progressive passes, %", 
                 "Third assists per 90", "xA per 90"],
-    'Mediocampista': ["Assists per 90", "xA per 90", "Offensive duels won, %", "Aerial duels won, %", 
+    'Mediocampista': ["Matches played", "Minutes played", "Assists per 90", "xA per 90", "Offensive duels won, %", "Aerial duels won, %", 
                       "Defensive duels won, %", "Interceptions per 90", "Received passes per 90", 
                       "Accurate short / medium passes, %", "Accurate passes to final third, %", 
                       "Accurate long passes, %", "Accurate progressive passes, %", "Successful dribbles, %", 
                       "xG per 90", "Goals per 90"],
-    'Extremos': ["xG per 90", "Goals per 90", "Assists per 90", "xA per 90", "Received passes per 90", 
+    'Extremos': ["Matches played", "Minutes played", "xG per 90", "Goals per 90", "Assists per 90", "xA per 90", "Received passes per 90", 
                  "Accurate crosses, %", "Accurate through passes, %", "Accurate progressive passes, %", 
                  "Crosses to goalie box per 90", "Accurate passes to penalty area, %", "Offensive duels won, %", 
                  "Defensive duels won, %", "Interceptions per 90", "Successful dribbles, %"],
-    "Delantero": ["Goals per 90", "Head goals per 90", "Non-penalty goals per 90", "Goal conversion, %", 
+    "Delantero": ["Matches played", "Minutes played", "Goals per 90", "Head goals per 90", "Non-penalty goals per 90", "Goal conversion, %", 
                   "xG per 90", "xA per 90", "Assists per 90", "Key passes per 90", "Passes per 90", 
                   "Passes to penalty area per 90", "Passes to final third per 90", "Accurate passes, %", 
                   "Accurate passes to final third, %", "Aerial duels won, %", "Duels won, %", 
                   "Shots per 90", "Shots on target, %", "Touches in box per 90"]
-    # Otros roles omitidos por brevedad...
 }
 
 # Título de la aplicación
 st.title("Comparación de Jugadores")
 
-# URL del repositorio de GitHub
-github_repo_url = "https://raw.githubusercontent.com/tu_usuario/tu_repositorio/main/"  # Cambia esto a tu URL
+# URL base del repositorio de GitHub
+github_url = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/"
 
-# Lista de archivos CSV en el repositorio
-archivos_csv = ["archivo1.csv", "archivo2.csv"]  # Cambia esto a los nombres de tus archivos
+# Lista de archivos disponibles en el repositorio
+file_names = [
+    "file1.csv",  # Cambia estos nombres a los nombres de tus archivos CSV
+    "file2.csv",
+    # Añade más archivos según sea necesario
+]
 
-# Crear una lista de URLs de los archivos CSV
-urls_archivos = [github_repo_url + archivo for archivo in archivos_csv]
-
-# Extraer las temporadas y años de los nombres de los archivos y crear un diccionario para almacenar los datos por temporada
+# Cargar los archivos CSV desde el repositorio
 data_by_season = {}
 available_seasons = set()
 
-for url in urls_archivos:
-    # Usar una expresión regular para encontrar años y temporadas en el nombre del archivo (ejemplo: 2020, 2021, 22-23, 23-24)
-    matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url)
-    if matches:
-        for match in matches:
-            if '-' in match:  # Si es del tipo '22-23', lo mantenemos como está
+for file_name in file_names:
+    url = github_url + file_name
+    response = requests.get(url)
+    if response.status_code == 200:
+        # Usar una expresión regular para encontrar años y temporadas en el nombre del archivo
+        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', file_name)
+        if matches:
+            for match in matches:
                 available_seasons.add(match)
-            else:  # Si es del tipo '2020' o similar
-                available_seasons.add(match)
-    
-    # Leer el archivo desde la URL y agregarlo al diccionario según la temporada
-    data_by_season[url] = pd.read_csv(url)
+        
+        # Leer el archivo CSV y agregarlo al diccionario según la temporada
+        data_by_season[file_name] = pd.read_csv(StringIO(response.text))
 
-# Añadir un filtro de temporada en la barra lateral basado en los años y temporadas encontrados
+# Añadir un filtro de temporada en la barra lateral
 selected_season = st.sidebar.selectbox("Selecciona el año o temporada", sorted(available_seasons))
 
 # Combinar todos los datos correspondientes a la temporada seleccionada
 filtered_data = pd.concat(
-    [data for url, data in data_by_season.items() if selected_season in url], ignore_index=True
+    [data for filename, data in data_by_season.items() if selected_season in filename], ignore_index=True
 )
 
 # Verificar si las columnas necesarias están en los datos
 if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
-    # Seleccionar el jugador principal para la comparación
-    jugador_principal = st.sidebar.selectbox("Selecciona el jugador principal:", filtered_data['Full name'].unique())
+    # Filtrar los equipos disponibles según la temporada seleccionada
+    equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
 
-    # Seleccionar varios jugadores para comparar con el jugador principal, asegurando que el jugador principal siempre esté incluido
+    # Convertir todos los equipos a cadenas para evitar problemas de tipo
+    equipos_disponibles = [str(equipo) for equipo in equipos_disponibles]
+
+    # Agregar la opción "Todos" a la lista de equipos
+    equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
+
+    equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
+
+    # Filtrar los jugadores según el equipo seleccionado
+    if equipo_seleccionado == 'Todos':
+        jugadores_filtrados_por_equipo = filtered_data
+    else:
+        jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team within selected timeframe'] == equipo_seleccionado]
+
+    # Seleccionar el jugador principal para la comparación
+    jugador_principal = st.sidebar.selectbox("Selecciona el jugador principal:", jugadores_filtrados_por_equipo['Full name'].unique())
+
+    # Seleccionar varios jugadores para comparar con el jugador principal
     jugadores_comparacion = st.sidebar.multiselect("Selecciona los jugadores para comparar:", 
-                                                   filtered_data['Full name'].unique(), 
+                                                   jugadores_filtrados_por_equipo['Full name'].unique(), 
                                                    default=[jugador_principal])
 
     # Asegurar que el jugador principal esté en la lista de comparación y en la segunda columna
@@ -112,7 +131,7 @@ if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns
     # Asegurar que los índices de logos_html y jugadores_comparativos sean únicos y estén alineados
     logos_html.columns = jugadores_comparativos.columns
 
-    # Aplicar formato condicional para resaltar la métrica más alta con un fondo amarillo y texto negro
+    # Aplicar formato condicional para resaltar la métrica más alta
     jugadores_comparativos_html = jugadores_comparativos.apply(lambda row: row.apply(
         lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
     ), axis=1)
