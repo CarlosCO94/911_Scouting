@@ -43,8 +43,8 @@ metricas_por_posicion = {
 # Título de la aplicación
 st.title("Comparación de Jugadores")
 
-# URL de la carpeta Ligas en GitHub
-url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Ligas"
+# URL de la carpeta "Main APP" en GitHub
+url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Main%20APP"
 
 # Función para cargar datos CSV con caché
 @st.cache_data
@@ -59,7 +59,7 @@ def cargar_datos_csv(url):
 # Inicializar file_urls
 file_urls = []  # Definimos la variable file_urls para evitar el NameError
 
-# Obtener la lista de archivos CSV en la carpeta Ligas
+# Obtener la lista de archivos CSV en la carpeta "Main APP"
 try:
     response = requests.get(url_base)
     if response.status_code == 200:
@@ -67,13 +67,13 @@ try:
         # Filtra solo los archivos CSV y almacena sus URLs de descarga
         file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
     else:
-        st.error(f"Error al acceder a la carpeta Ligas: {response.status_code}")
+        st.error(f"Error al acceder a la carpeta Main APP: {response.status_code}")
 except requests.RequestException as e:
-    st.error(f"Error de red al intentar acceder a la carpeta Ligas: {e}")
+    st.error(f"Error de red al intentar acceder a la carpeta Main APP: {e}")
 
 # Verificar que file_urls esté definido antes de su uso
 if not file_urls:
-    st.error("No se encontraron archivos CSV en la carpeta Ligas.")
+    st.error("No se encontraron archivos CSV en la carpeta Main APP.")
 
 # Ahora podemos usar file_urls sin preocuparnos de que no esté definida
 data_by_season = {}
@@ -154,6 +154,4 @@ else:
                 # Mostrar la tabla final en la aplicación
                 st.write(html_table, unsafe_allow_html=True)
 
-        else:
-            st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
 
