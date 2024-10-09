@@ -103,8 +103,10 @@ else:
             else:
                 jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team within selected timeframe'] == equipo_seleccionado]
 
-            jugadores_comparacion = st.sidebar.multiselect("Selecciona los jugadores para comparar (el primero será el jugador principal):", 
-                                                           jugadores_filtrados_por_equipo['Full name'].unique())
+            jugadores_comparacion = st.sidebar.multiselect(
+                "Selecciona los jugadores para comparar (el primero será el jugador principal):", 
+                jugadores_filtrados_por_equipo['Full name'].unique()
+            )
 
             if jugadores_comparacion:
                 jugador_principal = jugadores_comparacion[0]
@@ -112,14 +114,11 @@ else:
                 posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
                 metricas_filtradas = metricas_por_posicion[posicion]
 
-                                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
-
-                                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
+                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
 
                 # Crear una tabla con los logos de los equipos y los nombres de los jugadores
                 logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
                 logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
-
 
                 # Crear una tabla con las métricas de comparación de los jugadores
                 jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
@@ -128,9 +127,11 @@ else:
                 logos_html.columns = jugadores_comparativos.columns
 
                 # Aplicar formato para resaltar los valores máximos de cada métrica
-                jugadores_comparativos_html = jugadores_comparativos.apply(lambda row: row.apply(
-                    lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
-                ), axis=1)
+                jugadores_comparativos_html = jugadores_comparativos.apply(
+                    lambda row: row.apply(
+                        lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
+                    ), axis=1
+                )
 
                 # Combinar la tabla de logos y la tabla de métricas para la visualización final
                 tabla_final = pd.concat([logos_html, jugadores_comparativos_html])
