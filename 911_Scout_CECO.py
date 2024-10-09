@@ -57,14 +57,13 @@ def cargar_datos_csv(url):
         return pd.DataFrame()
 
 # Inicializar file_urls
-file_urls = []  # Definimos la variable file_urls para evitar el NameError
+file_urls = []
 
 # Obtener la lista de archivos CSV en la carpeta "Main APP"
 try:
     response = requests.get(url_base)
     if response.status_code == 200:
         archivos = response.json()
-        # Filtra solo los archivos CSV y almacena sus URLs de descarga
         file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
     else:
         st.error(f"Error al acceder a la carpeta Main APP: {response.status_code}")
@@ -75,7 +74,6 @@ except requests.RequestException as e:
 if not file_urls:
     st.error("No se encontraron archivos CSV en la carpeta Main APP.")
 
-# Ahora podemos usar file_urls sin preocuparnos de que no esté definida
 data_by_season = {}
 available_seasons = set()
 
@@ -125,6 +123,10 @@ else:
                 posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
                 metricas_filtradas = metricas_por_posicion[posicion]
 
+                # Nuevo selectbox para seleccionar las métricas específicas del CSV
+                todas_las_metricas = filtered_data.columns.tolist()
+                metrica_seleccionada = st.sidebar.selectbox("Selecciona la métrica a mostrar:", todas_las_metricas)
+
                 jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
 
                 # Crear una tabla con los logos de los equipos y los nombres de los jugadores
@@ -132,7 +134,7 @@ else:
                 logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
 
                 # Crear una tabla con las métricas de comparación de los jugadores
-                jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
+                jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas + [metrica_seleccionada]].transpose()
 
                 # Alinear la tabla de logos con la tabla de métricas para una mejor presentación
                 logos_html.columns = jugadores_comparativos.columns
@@ -154,4 +156,6 @@ else:
                 # Mostrar la tabla final en la aplicación
                 st.write(html_table, unsafe_allow_html=True)
 
+        else:
+            st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
 
