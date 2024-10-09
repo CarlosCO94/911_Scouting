@@ -58,13 +58,16 @@ def cargar_datos_csv(url):
 
 # Obtener la lista de archivos CSV en la carpeta Ligas
 response = requests.get(url_base)
+file_urls = []  # Definimos la variable file_urls para evitar el NameError
+
 if response.status_code == 200:
     archivos = response.json()
+    # Filtra solo los archivos CSV y almacena sus URLs de descarga
     file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
 else:
     st.error(f"Error al acceder a la carpeta Ligas: {response.status_code}")
 
-# Cargar los archivos CSV desde el repositorio usando la función optimizada con caché
+# Ahora podemos usar file_urls sin preocuparnos de que no esté definida
 data_by_season = {}
 available_seasons = set()
 
