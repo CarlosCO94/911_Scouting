@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import re  # Para usar expresiones regulares
 import requests
+import re  # Para usar expresiones regulares
 from io import StringIO
 
 # Configuración para que la página siempre se ejecute en modo wide
@@ -43,107 +43,118 @@ metricas_por_posicion = {
 # Título de la aplicación
 st.title("Comparación de Jugadores")
 
-# URL base del repositorio de GitHub
-github_url = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/"
+# URL de la carpeta Ligas en GitHub
+url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Ligas"
 
-# Lista de archivos disponibles en el repositorio
-file_names = [
-    "file1.csv",  # Cambia estos nombres a los nombres de tus archivos CSV
-    "file2.csv",
-    # Añade más archivos según sea necesario
-]
+# Obtener la lista de archivos CSV en la carpeta Ligas
+response = requests.get(url_base)
+if response.status_code == 200:
+    archivos = response.json()
+    file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
+else:
+    st.error(f"Error al acceder a la carpeta Ligas: {response.status_code}")
 
 # Cargar los archivos CSV desde el repositorio
 data_by_season = {}
 available_seasons = set()
 
-for file_name in file_names:
-    url = github_url + file_name
+for url in file_urls:
     response = requests.get(url)
     if response.status_code == 200:
         # Usar una expresión regular para encontrar años y temporadas en el nombre del archivo
-        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', file_name)
+        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
         if matches:
             for match in matches:
                 available_seasons.add(match)
         
         # Leer el archivo CSV y agregarlo al diccionario según la temporada
-        data_by_season[file_name] = pd.read_csv(StringIO(response.text))
-
-# Añadir un filtro de temporada en la barra lateral
-selected_season = st.sidebar.selectbox("Selecciona el año o temporada", sorted(available_seasons))
-
-# Combinar todos los datos correspondientes a la temporada seleccionada
-filtered_data = pd.concat(
-    [data for filename, data in data_by_season.items() if selected_season in filename], ignore_index=True
-)
-
-# Verificar si las columnas necesarias están en los datos
-if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
-    # Filtrar los equipos disponibles según la temporada seleccionada
-    equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
-
-    # Convertir todos los equipos a cadenas para evitar problemas de tipo
-    equipos_disponibles = [str(equipo) for equipo in equipos_disponibles]
-
-    # Agregar la opción "Todos" a la lista de equipos
-    equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
-
-    equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
-
-    # Filtrar los jugadores según el equipo seleccionado
-    if equipo_seleccionado == 'Todos':
-        jugadores_filtrados_por_equipo = filtered_data
+        data_by_season[url.split('/')[-1]] = pd.read_csv(StringIO(response.text))
     else:
-        jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team within selected timeframe'] == equipo_seleccionado]
+        st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
 
-    # Seleccionar el jugador principal para la comparación
-    jugador_principal = st.sidebar.selectbox("Selecciona el jugador principal:", jugadores_filtrados_por_equipo['Full name'].unique())
-
-    # Seleccionar varios jugadores para comparar con el jugador principal
-    jugadores_comparacion = st.sidebar.multiselect("Selecciona los jugadores para comparar:", 
-                                                   jugadores_filtrados_por_equipo['Full name'].unique(), 
-                                                   default=[jugador_principal])
-
-    # Asegurar que el jugador principal esté en la lista de comparación y en la segunda columna
-    if jugador_principal not in jugadores_comparacion:
-        jugadores_comparacion.insert(0, jugador_principal)
-    else:
-        jugadores_comparacion.remove(jugador_principal)
-        jugadores_comparacion.insert(0, jugador_principal)
-
-    # Seleccionar la posición para filtrar las métricas
-    posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
-
-    # Filtrar las métricas de acuerdo a la posición seleccionada
-    metricas_filtradas = metricas_por_posicion[posicion]
-
-    # Filtrar los datos para mostrar solo los jugadores seleccionados y las métricas relevantes
-    jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
-
-    # Crear una fila con los logos del equipo y centrarlos en HTML
-    logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
-    logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
-
-    # Reorganizar la tabla para que los jugadores sean columnas y las métricas sean filas
-    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
-
-    # Asegurar que los índices de logos_html y jugadores_comparativos sean únicos y estén alineados
-    logos_html.columns = jugadores_comparativos.columns
-
-    # Aplicar formato condicional para resaltar la métrica más alta
-    jugadores_comparativos_html = jugadores_comparativos.apply(lambda row: row.apply(
-        lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
-    ), axis=1)
-
-    # Combinar la fila de logos con la tabla de métricas
-    tabla_final = pd.concat([logos_html, jugadores_comparativos_html])
-
-    # Convertir la tabla a HTML con encabezados centrados
-    html_table = tabla_final.to_html(escape=False, classes='table table-bordered', border=0)
-    html_table = html_table.replace('<th>', '<th style="text-align: center;">')
-
-    # Mostrar la tabla con estilo centrado para encabezados y contenido
-    st.write(html_table, unsafe_allow_html=True)
+# Verificar que hay temporadas disponibles
+if not available_seasons:
+    st.error("No se encontraron temporadas en los archivos CSV.")
 else:
-    st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
+    # Añadir un filtro de temporada en la barra lateral
+    selected_season = st.sidebar.selectbox("Selecciona el año o temporada", sorted(available_seasons))
+
+    # Combinar todos los datos correspondientes a la temporada seleccionada
+    filtered_data = pd.concat(
+        [data for filename, data in data_by_season.items() if selected_season in filename],
+        ignore_index=True
+    )
+
+    # Verificar si filtered_data no está vacío
+    if filtered_data.empty:
+        st.error(f"No se encontraron datos para la temporada {selected_season}.")
+    else:
+        # Verificar si las columnas necesarias están en los datos
+        if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
+            # Filtrar los equipos disponibles según la temporada seleccionada
+            equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
+
+            # Convertir todos los equipos a cadenas para evitar problemas de tipo
+            equipos_disponibles = [str(equipo) for equipo in equipos_disponibles]
+
+            # Agregar la opción "Todos" a la lista de equipos
+            equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
+
+            equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
+
+            # Filtrar los jugadores según el equipo seleccionado
+            if equipo_seleccionado == 'Todos':
+                jugadores_filtrados_por_equipo = filtered_data
+            else:
+                jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team within selected timeframe'] == equipo_seleccionado]
+
+            # Seleccionar el jugador principal para la comparación
+            jugador_principal = st.sidebar.selectbox("Selecciona el jugador principal:", jugadores_filtrados_por_equipo['Full name'].unique())
+
+            # Seleccionar varios jugadores para comparar con el jugador principal
+            jugadores_comparacion = st.sidebar.multiselect("Selecciona los jugadores para comparar:", 
+                                                           jugadores_filtrados_por_equipo['Full name'].unique(), 
+                                                           default=[jugador_principal])
+
+            # Asegurar que el jugador principal esté en la lista de comparación y en la segunda columna
+            if jugador_principal not in jugadores_comparacion:
+                jugadores_comparacion.insert(0, jugador_principal)
+            else:
+                jugadores_comparacion.remove(jugador_principal)
+                jugadores_comparacion.insert(0, jugador_principal)
+
+            # Seleccionar la posición para filtrar las métricas
+            posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
+
+            # Filtrar las métricas de acuerdo a la posición seleccionada
+            metricas_filtradas = metricas_por_posicion[posicion]
+
+            # Filtrar los datos para mostrar solo los jugadores seleccionados y las métricas relevantes
+            jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
+
+            # Crear una fila con los logos del equipo y centrarlos en HTML
+            logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
+            logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
+
+            # Reorganizar la tabla para que los jugadores sean columnas y las métricas sean filas
+            jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
+
+            # Asegurar que los índices de logos_html y jugadores_comparativos sean únicos y estén alineados
+            logos_html.columns = jugadores_comparativos.columns
+
+            # Aplicar formato condicional para resaltar la métrica más alta
+            jugadores_comparativos_html = jugadores_comparativos.apply(lambda row: row.apply(
+                lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
+            ), axis=1)
+
+            # Combinar la fila de logos con la tabla de métricas
+            tabla_final = pd.concat([logos_html, jugadores_comparativos_html])
+
+            # Convertir la tabla a HTML con encabezados centrados
+            html_table = tabla_final.to_html(escape=False, classes='table table-bordered', border=0)
+            html_table = html_table.replace('<th>', '<th style="text-align: center;">')
+
+            # Mostrar la tabla con estilo centrado para encabezados y contenido
+            st.write(html_table, unsafe_allow_html=True)
+        else:
+            st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
