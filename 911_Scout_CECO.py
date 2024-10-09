@@ -114,9 +114,12 @@ else:
 
                                 jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
 
+                                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
+
                 # Crear una tabla con los logos de los equipos y los nombres de los jugadores
                 logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
                 logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
+
 
                 # Crear una tabla con las métricas de comparación de los jugadores
                 jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
