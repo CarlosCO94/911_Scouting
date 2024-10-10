@@ -102,25 +102,32 @@ else:
             metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
             
             # Multiselect para seleccionar métricas adicionales
-            todas_las_metricas = sorted([col for col in combined_data.columns if col not in ['Full name', 'Season']])
+            todas_las_metricas = sorted([col for col in combined_data.columns if col not in ['Full name', 'Season', 'Team logo']])
             metricas_adicionales = st.sidebar.multiselect("Selecciona métricas adicionales:", todas_las_metricas)
 
             # Unir las métricas por posición y las métricas adicionales seleccionadas
             metricas_finales = list(set(metricas_filtradas + metricas_adicionales))
 
-            # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes
+            # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes y el logo del equipo
             if jugadores_seleccionados:
-                jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name'] + metricas_finales]
+                jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
                 
+                # Crear una fila con los logos de los equipos
+                logos_html = jugadores_data[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
+                logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
+
                 # Aplicar formato condicional para resaltar el valor más alto en cada fila
                 def resaltar_maximo(s):
                     is_max = s == s.max()
                     return ['background-color: yellow' if v else '' for v in is_max]
 
                 st.write(f"Datos para los jugadores seleccionados en la posición {posicion_seleccionada}:")
-                st.dataframe(jugadores_data.style.apply(resaltar_maximo, subset=metricas_finales, axis=0))
+                styled_data = jugadores_data.style.apply(resaltar_maximo, subset=metricas_finales, axis=0)
+
+                # Mostrar la tabla con los logos en la primera fila y las métricas resaltadas
+                st.write(logos_html.to_html(escape=False), unsafe_allow_html=True)
+                st.dataframe(styled_data)
         else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
         st.error("No se encontraron datos en los archivos CSV proporcionados.")
-
