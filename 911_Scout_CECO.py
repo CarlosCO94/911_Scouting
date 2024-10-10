@@ -29,8 +29,8 @@ metricas_por_posicion = {
 # Título de la aplicación
 st.title("Comparación de Jugadores")
 
-# URLs directas de los archivos CSV
-data_url = 'https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Main%20APP/some_file_in_main_app.csv'
+# URLs directas de los archivos CSV (reemplaza con las URLs correctas)
+data_url = 'https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Main%20APP/nombre_del_archivo.csv'
 logo_url = 'https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Wyscout_Logo_URL.csv'
 
 # Función para cargar datos CSV desde una URL
