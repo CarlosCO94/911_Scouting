@@ -86,26 +86,32 @@ else:
         if 'Season' in combined_data.columns:
             st.sidebar.header("Opciones de Comparación de Jugadores")
             
-            # Select box para seleccionar temporadas
+            # Multiselect para seleccionar temporadas
             available_seasons = sorted(combined_data['Season'].unique())
-            selected_season = st.sidebar.selectbox("Selecciona la temporada:", available_seasons)
+            selected_seasons = st.sidebar.multiselect("Selecciona las temporadas:", available_seasons)
             
-            # Filtrar los datos para la temporada seleccionada
-            filtered_data = combined_data[combined_data['Season'] == selected_season]
+            # Filtrar los datos para las temporadas seleccionadas
+            filtered_data = combined_data[combined_data['Season'].isin(selected_seasons)]
             
-            # Select box para seleccionar jugadores
+            # Multiselect para seleccionar jugadores
             jugadores_disponibles = sorted(filtered_data['Full name'].unique())
-            jugador_seleccionado = st.sidebar.selectbox("Selecciona el jugador:", jugadores_disponibles)
+            jugadores_seleccionados = st.sidebar.multiselect("Selecciona los jugadores:", jugadores_disponibles)
             
             # Select box para seleccionar la posición del jugador y mostrar las métricas correspondientes
             posicion_seleccionada = st.sidebar.selectbox("Selecciona la posición del jugador:", metricas_por_posicion.keys())
             metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
             
-            # Mostrar los datos del jugador seleccionado con las métricas correspondientes
-            if jugador_seleccionado:
-                jugador_data = filtered_data[filtered_data['Full name'] == jugador_seleccionado][metricas_filtradas]
-                st.write(f"Datos para el jugador seleccionado ({jugador_seleccionado}) en la posición {posicion_seleccionada}:")
-                st.dataframe(jugador_data)
+            # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes
+            if jugadores_seleccionados:
+                jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name'] + metricas_filtradas]
+                
+                # Aplicar formato condicional para resaltar el valor más alto en cada fila
+                def resaltar_maximo(s):
+                    is_max = s == s.max()
+                    return ['background-color: yellow' if v else '' for v in is_max]
+
+                st.write(f"Datos para los jugadores seleccionados en la posición {posicion_seleccionada}:")
+                st.dataframe(jugadores_data.style.apply(resaltar_maximo, subset=metricas_filtradas, axis=0))
         else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
