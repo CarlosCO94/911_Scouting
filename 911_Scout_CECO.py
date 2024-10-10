@@ -77,35 +77,28 @@ if not file_urls:
 data_by_season = {}
 available_seasons = set()
 
-# Detectar temporadas únicamente en los nombres de archivos que contienen temporadas válidas
 for url in file_urls:
     data = cargar_datos_csv(url)
     if not data.empty:
-        # Ajustar la expresión regular para detectar años y temporadas de formato '20-21', '2021', etc.
-        matches = re.findall(r'\b(?:\d{4}|\d{2}-\d{2})\b', url.split('/')[-1])
+        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
         if matches:
-            available_seasons.update(matches)
+            for match in matches:
+                available_seasons.add(match)
         data_by_season[url.split('/')[-1]] = data
 
 # Verificar que hay temporadas disponibles
 if not available_seasons:
     st.error("No se encontraron temporadas en los archivos CSV.")
 else:
-    # Cambiar el filtro de temporada a un multiselect
-    selected_seasons = st.sidebar.multiselect(
-        "Selecciona las temporadas", 
-        sorted(available_seasons), 
-        default=sorted(available_seasons)
-    )
+    selected_season = st.sidebar.selectbox("Selecciona el año o temporada", sorted(available_seasons))
 
-    # Filtrar los datos según las temporadas seleccionadas
     filtered_data = pd.concat(
-        [data for filename, data in data_by_season.items() if any(season in filename for season in selected_seasons)],
+        [data for filename, data in data_by_season.items() if selected_season in filename],
         ignore_index=True
     )
 
     if filtered_data.empty:
-        st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
+        st.error(f"No se encontraron datos para la temporada {selected_season}.")
     else:
         if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
             equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
@@ -164,4 +157,4 @@ else:
                 st.write(html_table, unsafe_allow_html=True)
 
         else:
-            st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
+            st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.") 
