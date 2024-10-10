@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import requests
 import re
+import matplotlib.pyplot as plt
+import numpy as np
 from io import StringIO
 
 # Configuración para que la página siempre se ejecute en modo wide
@@ -60,7 +62,7 @@ try:
 except requests.RequestException as e:
     st.error(f"Error de red al intentar acceder a la carpeta Main APP: {e}")
 
-# Cargar datos de los jugadores
+# Cargar datos de los jugadores y verificar que la columna 'Competition' esté presente
 data_frames = []
 if file_urls:
     for url, name in zip(file_urls, file_names):
@@ -72,12 +74,18 @@ if file_urls:
                 df['Season'] = season
             else:
                 df['Season'] = 'Desconocida'
+
+            # Verificar que la columna 'Competition' esté presente y asignarla
+            if 'Competition' in df.columns:
+                df['Competition'] = df['Competition']
+            else:
+                df['Competition'] = 'Unknown'
+
             data_frames.append(df)
 
 # Combinar todos los dataframes si hay más de uno
 if data_frames:
     combined_data = pd.concat(data_frames, ignore_index=True)
-
 # Verificar si las columnas 'Full name' y 'Team logo' existen antes de continuar
 required_columns = ['Full name', 'Team logo']
 missing_columns = [col for col in required_columns if col not in combined_data.columns]
@@ -118,37 +126,73 @@ else:
             jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
             st.markdown(jugadores_data.to_html(escape=False, index=False), unsafe_allow_html=True)
     # Segunda pestaña: Player Radar Generation
-    with tabs[1]:
-        st.header("Player Radar Generation")
-    
-        # Verificar si el archivo de ligas tiene la columna necesaria
-        if 'League' not in league_data.columns:
-            st.error("La columna 'League' no se encontró en el archivo Ligas_Wyscout.csv.")
-        else:
-            # Select box para seleccionar la liga basado en el archivo de ligas cargado
-            selected_league = st.selectbox("Selecciona la liga:", sorted(league_data['League'].unique()))
-    
-            # Filtrar equipos según la liga seleccionada en los datos combinados de jugadores
-            filtered_teams = combined_data[combined_data['League'] == selected_league]['Team'].unique()
-            selected_team = st.selectbox("Selecciona el equipo:", sorted(filtered_teams))
-    
-            # Filtro de edad
-            age_range = st.slider("Selecciona el rango de edad:", int(combined_data['Age'].min()), int(combined_data['Age'].max()), (18, 35))
-    
-            # Filtro de pierna preferida
-            selected_foot = st.selectbox("Selecciona el pie preferido:", sorted(combined_data['Foot'].unique()))
-    
-            # Filtrar los jugadores según los criterios seleccionados
-            jugadores_filtrados = combined_data[
-                (combined_data['League'] == selected_league) &
-                (combined_data['Team'] == selected_team) &
-                (combined_data['Age'].between(age_range[0], age_range[1])) &
-                (combined_data['Foot'] == selected_foot)
-            ]['Full name'].unique()
-    
-            # Select box para elegir un jugador específico
-            selected_player = st.selectbox("Selecciona el jugador:", sorted(jugadores_filtrados))
-    
-            # Mostrar los detalles del jugador seleccionado si hay un jugador elegido
-            if selected_player:
-                st.write(f"Mostrando datos para el jugador: {selected_player}")
+    import matplotlib.pyplot as plt
+import numpy as np
+
+# Segunda pestaña: Player Radar Generation
+with tabs[1]:
+    st.header("Player Radar Generation")
+
+    # Verificar si el archivo de datos combinados tiene la columna 'Competition'
+    if 'Competition' not in combined_data.columns:
+        st.error("La columna 'Competition' no se encontró en los datos combinados.")
+    else:
+        # Select box para seleccionar la liga basada en la columna 'Competition'
+        selected_league = st.selectbox("Selecciona la liga:", sorted(combined_data['Competition'].unique()))
+
+        # Filtrar equipos según la liga seleccionada en los datos combinados de jugadores
+        filtered_teams = combined_data[combined_data['Competition'] == selected_league]['Team'].unique()
+        selected_team = st.selectbox("Selecciona el equipo:", sorted(filtered_teams))
+
+        # Filtro de edad
+        age_range = st.slider("Selecciona el rango de edad:", int(combined_data['Age'].min()), int(combined_data['Age'].max()), (18, 35))
+
+        # Filtro de pierna preferida
+        selected_foot = st.selectbox("Selecciona el pie preferido:", sorted(combined_data['Foot'].unique()))
+
+        # Filtrar los jugadores según los criterios seleccionados
+        jugadores_filtrados = combined_data[
+            (combined_data['Competition'] == selected_league) &
+            (combined_data['Team'] == selected_team) &
+            (combined_data['Age'].between(age_range[0], age_range[1])) &
+            (combined_data['Foot'] == selected_foot)
+        ]['Full name'].unique()
+
+        # Select box para elegir un jugador específico
+        selected_player = st.selectbox("Selecciona el jugador:", sorted(jugadores_filtrados))
+
+        # Generar radar si hay un jugador seleccionado
+        if selected_player:
+            st.write(f"Mostrando radar para el jugador: {selected_player}")
+
+            # Filtrar datos del jugador seleccionado
+            jugador_data = combined_data[combined_data['Full name'] == selected_player]
+
+            # Seleccionar métricas para el radar basadas en la posición del jugador
+            posicion_seleccionada = st.selectbox("Selecciona la posición del jugador para el radar:", metricas_por_posicion.keys())
+            metricas_para_radar = metricas_por_posicion[posicion_seleccionada]
+
+            # Filtrar las métricas disponibles para el jugador
+            valores_jugador = [jugador_data[metrica].values[0] if metrica in jugador_data.columns else 0 for metrica in metricas_para_radar]
+
+            # Generar el gráfico de radar
+            if valores_jugador:
+                fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+
+                # Crear el ángulo del radar con respecto al número de métricas
+                num_vars = len(metricas_para_radar)
+                angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+
+                # Completar el círculo del radar
+                valores_jugador += valores_jugador[:1]
+                angles += angles[:1]
+
+                ax.fill(angles, valores_jugador, color='blue', alpha=0.25)
+                ax.plot(angles, valores_jugador, color='blue', linewidth=2)
+
+                # Ajuste de etiquetas y límites
+                ax.set_yticklabels([])
+                ax.set_xticks(angles[:-1])
+                ax.set_xticklabels(metricas_para_radar)
+
+                st.pyplot(fig)
