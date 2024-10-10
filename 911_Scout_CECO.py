@@ -7,6 +7,26 @@ from io import StringIO
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
+# Diccionario de métricas por posición
+metricas_por_posicion = {
+    'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", 
+                "xG against per 90", "Prevented goals per 90", "Back passes received as GK per 90", 
+                "Exits per 90", "Aerial duels per 90"],
+    'Centrales': ["Minutes played", "Defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Sliding tackles per 90", "Possession won after a tackle", "Shots blocked per 90", 
+                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90", "Head goals"],
+    'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
+                  "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
+    'Volantes Centrales + MCO': ["Minutes played", "Goals", "Assists per 90", "Duels won, %", "Successful defensive actions per 90", 
+                                 "Defensive duels per 90", "Long passes per 90", "Aerial duels per 90", 
+                                 "Interceptions per 90", "Forward passes per 90", "Through passes per 90"],
+    'Delantero + Extremos': ["Minutes played", "Goals per 90", "Assists per 90", "Shots per 90", "Shots on target, %", 
+                             "Successful dribbles per 90", "Offensive duels per 90", "Received passes per 90", 
+                             "Crosses per 90", "Dribbles per 90", "Accurate passes, %", "Forward passes per 90", 
+                             "Through passes per 90"]
+}
+
 # URL base para acceder a los archivos directamente en GitHub
 base_raw_url = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Main%20APP/"
 
@@ -66,35 +86,26 @@ else:
         if 'Season' in combined_data.columns:
             st.sidebar.header("Opciones de Comparación de Jugadores")
             
-            # Selección de temporadas y filtrado de datos
+            # Select box para seleccionar temporadas
             available_seasons = sorted(combined_data['Season'].unique())
-            selected_seasons = st.sidebar.multiselect("Selecciona la(s) temporada(s):", available_seasons)
+            selected_season = st.sidebar.selectbox("Selecciona la temporada:", available_seasons)
             
-            filtered_data = combined_data[combined_data['Season'].isin(selected_seasons)] if selected_seasons else combined_data
+            # Filtrar los datos para la temporada seleccionada
+            filtered_data = combined_data[combined_data['Season'] == selected_season]
             
-            if not filtered_data.empty:
-                equipos_disponibles = ['Todos'] + sorted(filtered_data['Team within selected timeframe'].unique())
-                equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
-                
-                if equipo_seleccionado != 'Todos':
-                    jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team within selected timeframe'] == equipo_seleccionado]
-                else:
-                    jugadores_filtrados_por_equipo = filtered_data
-                
-                jugadores_comparacion = st.sidebar.multiselect("Selecciona los jugadores para comparar:", jugadores_filtrados_por_equipo['Full name'].unique())
-
-                if jugadores_comparacion:
-                    posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
-                    metricas_filtradas = metricas_por_posicion[posicion]
-                    
-                    jugadores_filtrados = jugadores_filtrados_por_equipo[jugadores_filtrados_por_equipo['Full name'].isin(jugadores_comparacion)]
-                    
-                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
-                    
-                    st.write("Comparación de Jugadores:")
-                    st.dataframe(jugadores_comparativos)
-            else:
-                st.error("No se encontraron datos para las temporadas seleccionadas.")
+            # Select box para seleccionar jugadores
+            jugadores_disponibles = sorted(filtered_data['Full name'].unique())
+            jugador_seleccionado = st.sidebar.selectbox("Selecciona el jugador:", jugadores_disponibles)
+            
+            # Select box para seleccionar la posición del jugador y mostrar las métricas correspondientes
+            posicion_seleccionada = st.sidebar.selectbox("Selecciona la posición del jugador:", metricas_por_posicion.keys())
+            metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
+            
+            # Mostrar los datos del jugador seleccionado con las métricas correspondientes
+            if jugador_seleccionado:
+                jugador_data = filtered_data[filtered_data['Full name'] == jugador_seleccionado][metricas_filtradas]
+                st.write(f"Datos para el jugador seleccionado ({jugador_seleccionado}) en la posición {posicion_seleccionada}:")
+                st.dataframe(jugador_data)
         else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
