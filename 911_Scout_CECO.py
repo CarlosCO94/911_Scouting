@@ -113,16 +113,11 @@ else:
             st.error(f"Las siguientes columnas necesarias no están presentes en los datos: {', '.join(missing_columns)}")
         else:
             # Crear pestañas para organizar la interfaz de la aplicación
-            tabs = st.tabs(["Player Radar Generation", "Player Search, Filters", "Player Search, Results", "Scatter Plots"])
+            tabs = st.tabs(["Player Search and Results", "Player Radar Generation", "Scatter Plots"])
 
-            # Primera pestaña: Player Radar Generation
+            # Primera pestaña: Player Search and Results
             with tabs[0]:
-                st.header("Player Radar Generation")
-                st.write("Aquí se generará el radar de jugadores.")
-
-            # Segunda pestaña: Player Search, Filters
-            with tabs[1]:
-                st.header("Player Search, Filters")
+                st.header("Player Search and Results")
 
                 # Multiselect para seleccionar temporadas
                 available_seasons = sorted(combined_data['Season'].unique())
@@ -146,9 +141,7 @@ else:
                 # Unir las métricas por posición y las métricas adicionales seleccionadas
                 metricas_finales = [metrica for metrica in metricas_filtradas + metricas_adicionales if metrica in filtered_data.columns]
 
-            # Tercera pestaña: Player Search, Results
-            with tabs[2]:
-                st.header("Player Search, Results")
+                # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes y el logo del equipo
                 if jugadores_seleccionados:
                     jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
 
@@ -169,10 +162,15 @@ else:
 
                     html_table += '</table>'
 
-                    # Mostrar la tabla HTML en la pestaña "Player Search, Results"
+                    # Mostrar la tabla HTML en la pestaña "Player Search and Results"
                     st.markdown(html_table, unsafe_allow_html=True)
 
-            # Cuarta pestaña: Scatter Plots
-            with tabs[3]:
+            # Segunda pestaña: Player Radar Generation
+            with tabs[1]:
+                st.header("Player Radar Generation")
+                st.write("Aquí se generará el radar de jugadores.")
+
+            # Tercera pestaña: Scatter Plots
+            with tabs[2]:
                 st.header("Scatter Plots")
                 st.write("Aquí se mostrarán los gráficos de dispersión.")
