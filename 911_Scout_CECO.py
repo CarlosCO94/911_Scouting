@@ -101,9 +101,16 @@ else:
             posicion_seleccionada = st.sidebar.selectbox("Selecciona la posición del jugador:", metricas_por_posicion.keys())
             metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
             
+            # Multiselect para seleccionar métricas adicionales
+            todas_las_metricas = sorted([col for col in combined_data.columns if col not in ['Full name', 'Season']])
+            metricas_adicionales = st.sidebar.multiselect("Selecciona métricas adicionales:", todas_las_metricas)
+
+            # Unir las métricas por posición y las métricas adicionales seleccionadas
+            metricas_finales = list(set(metricas_filtradas + metricas_adicionales))
+
             # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes
             if jugadores_seleccionados:
-                jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name'] + metricas_filtradas]
+                jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name'] + metricas_finales]
                 
                 # Aplicar formato condicional para resaltar el valor más alto en cada fila
                 def resaltar_maximo(s):
@@ -111,8 +118,9 @@ else:
                     return ['background-color: yellow' if v else '' for v in is_max]
 
                 st.write(f"Datos para los jugadores seleccionados en la posición {posicion_seleccionada}:")
-                st.dataframe(jugadores_data.style.apply(resaltar_maximo, subset=metricas_filtradas, axis=0))
+                st.dataframe(jugadores_data.style.apply(resaltar_maximo, subset=metricas_finales, axis=0))
         else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
         st.error("No se encontraron datos en los archivos CSV proporcionados.")
+
