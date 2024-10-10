@@ -108,18 +108,25 @@ else:
             if jugadores_seleccionados:
                 jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
 
-                # Construir la tabla HTML
-                html_table = '<table border="1"><tr><th>Jugador</th><th>Logo</th>'
-                html_table += ''.join([f'<th>{metrica}</th>' for metrica in metricas_finales])
+                # Construir la tabla HTML transpuesta
+                html_table = '<table border="1"><tr><th>Métrica</th>'
+                html_table += ''.join([f'<th>{jugador}</th>' for jugador in jugadores_seleccionados])
                 html_table += '</tr>'
 
-                for _, row in jugadores_data.iterrows():
-                    html_table += f'<tr><td>{row["Full name"]}</td><td><img src="{row["Team logo"]}" width="50"></td>'
-                    for metrica in metricas_finales:
-                        value = row[metrica]
+                for metrica in metricas_finales:
+                    html_table += f'<tr><td>{metrica}</td>'
+                    for jugador in jugadores_seleccionados:
+                        value = jugadores_data.loc[jugadores_data['Full name'] == jugador, metrica].values[0]
                         cell_color = 'background-color: yellow;' if value == jugadores_data[metrica].max() else ''
                         html_table += f'<td style="{cell_color}">{value}</td>'
                     html_table += '</tr>'
+
+                # Añadir una fila con los logos de los equipos
+                html_table += '<tr><td>Logo</td>'
+                for jugador in jugadores_seleccionados:
+                    logo_url = jugadores_data.loc[jugadores_data['Full name'] == jugador, 'Team logo'].values[0]
+                    html_table += f'<td><img src="{logo_url}" width="50"></td>'
+                html_table += '</tr>'
 
                 html_table += '</table>'
 
