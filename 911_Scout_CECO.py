@@ -83,7 +83,8 @@ for url in file_urls:
         matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
         if matches:
             for match in matches:
-                available_seasons.add(match)
+                if any(match in filename for filename in data_by_season):  # Verificar si la temporada existe en los archivos
+                    available_seasons.add(match)
         data_by_season[url.split('/')[-1]] = data
 
 # Verificar que hay temporadas disponibles
@@ -126,18 +127,19 @@ else:
                     posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
                     metricas_filtradas = metricas_por_posicion[posicion]
     
-                    # Nuevo selectbox para seleccionar las métricas específicas del CSV
+                    # Nuevo multiselect para seleccionar las métricas específicas del CSV
                     todas_las_metricas = filtered_data.columns.tolist()
-                    metrica_seleccionada = st.sidebar.selectbox("Selecciona la métrica a mostrar:", todas_las_metricas)
+                    metricas_seleccionadas = st.sidebar.multiselect("Selecciona las métricas a mostrar:", todas_las_metricas)
     
                     jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
     
                     # Crear una tabla con los logos de los equipos y los nombres de los jugadores
                     logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
                     logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
-    
+
                     # Crear una tabla con las métricas de comparación de los jugadores
-                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas + [metrica_seleccionada]].transpose()
+                    metricas_combinar = metricas_filtradas + metricas_seleccionadas  # Mantener todas las métricas seleccionadas en la tabla
+                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_combinar].transpose()
     
                     # Alinear la tabla de logos con la tabla de métricas para una mejor presentación
                     logos_html.columns = jugadores_comparativos.columns
