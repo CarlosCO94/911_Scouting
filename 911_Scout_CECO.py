@@ -29,11 +29,10 @@ metricas_por_posicion = {
 # Título de la aplicación
 st.title("Comparación de Jugadores")
 
-# URLs directas de los archivos CSV (reemplaza con las URLs correctas)
-data_url = 'https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Main%20APP/nombre_del_archivo.csv'
-logo_url = 'https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Wyscout_Logo_URL.csv'
+# URL base de la API de GitHub para listar los archivos en la carpeta "Main APP"
+url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Main%20APP"
 
-# Función para cargar datos CSV desde una URL
+# Función para cargar datos CSV desde una URL con caché
 @st.cache_data
 def cargar_datos_csv(url):
     response = requests.get(url)
@@ -43,52 +42,69 @@ def cargar_datos_csv(url):
         st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
         return pd.DataFrame()
 
-# Cargar los datos principales y los logos
-data = cargar_datos_csv(data_url)
-logos = cargar_datos_csv(logo_url)
+# Función para obtener la lista de archivos CSV en la carpeta "Main APP"
+def obtener_lista_archivos_csv(url_base):
+    response = requests.get(url_base)
+    if response.status_code == 200:
+        archivos = response.json()
+        return [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
+    else:
+        st.error(f"Error al acceder a la carpeta Main APP: {response.status_code}")
+        return []
 
-# Verificar si los datos se cargaron correctamente
-if data.empty or logos.empty:
-    st.error("No se pudieron cargar los datos desde las URLs proporcionadas.")
+# Obtener la lista de URLs de todos los archivos CSV en la carpeta "Main APP"
+csv_urls = obtener_lista_archivos_csv(url_base)
+
+# Verificar que se encontraron archivos CSV
+if not csv_urls:
+    st.error("No se encontraron archivos CSV en la carpeta Main APP.")
 else:
-    # Mostrar las columnas disponibles en el DataFrame para depurar
-    st.write("Columnas disponibles en el DataFrame:", data.columns.tolist())
+    # Cargar y combinar todos los archivos CSV en un solo DataFrame
+    data_frames = [cargar_datos_csv(url) for url in csv_urls]
+    data = pd.concat(data_frames, ignore_index=True)
 
-    # Filtrado de temporadas
-    available_seasons = sorted(data['Season'].unique())
-    selected_seasons = st.sidebar.multiselect("Selecciona el/los año(s) o temporada(s)", available_seasons)
+    # Verificar si el DataFrame combinado está vacío
+    if data.empty:
+        st.error("No se pudieron cargar los datos desde las URLs proporcionadas.")
+    else:
+        # Mostrar las columnas disponibles en el DataFrame para depurar
+        st.write("Columnas disponibles en el DataFrame:", data.columns.tolist())
 
-    if selected_seasons:
-        filtered_data = data[data['Season'].isin(selected_seasons)]
+        # Filtrado de temporadas
+        available_seasons = sorted(data['Season'].unique())
+        selected_seasons = st.sidebar.multiselect("Selecciona el/los año(s) o temporada(s)", available_seasons)
 
-        if filtered_data.empty:
-            st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
-        else:
-            equipos_disponibles = filtered_data['Team'].unique()
-            equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
+        if selected_seasons:
+            filtered_data = data[data['Season'].isin(selected_seasons)]
 
-            equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
-
-            if equipo_seleccionado == 'Todos':
-                jugadores_filtrados_por_equipo = filtered_data
+            if filtered_data.empty:
+                st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
             else:
-                jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team'] == equipo_seleccionado]
+                equipos_disponibles = filtered_data['Team'].unique()
+                equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
 
-            jugadores_comparacion = st.sidebar.multiselect(
-                "Selecciona los jugadores para comparar (el primero será el jugador principal):", 
-                jugadores_filtrados_por_equipo['Full name'].unique()
-            )
+                equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
 
-            if jugadores_comparacion:
-                jugador_principal = jugadores_comparacion[0]
+                if equipo_seleccionado == 'Todos':
+                    jugadores_filtrados_por_equipo = filtered_data
+                else:
+                    jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team'] == equipo_seleccionado]
 
-                posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
-                metricas_filtradas = metricas_por_posicion[posicion]
+                jugadores_comparacion = st.sidebar.multiselect(
+                    "Selecciona los jugadores para comparar (el primero será el jugador principal):", 
+                    jugadores_filtrados_por_equipo['Full name'].unique()
+                )
 
-                # Crear una tabla con las métricas de comparación de los jugadores
-                jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
-                jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
+                if jugadores_comparacion:
+                    jugador_principal = jugadores_comparacion[0]
 
-                # Mostrar la tabla de comparación
-                st.write(f"Comparación de jugadores para la posición: {posicion}")
-                st.dataframe(jugadores_comparativos)
+                    posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
+                    metricas_filtradas = metricas_por_posicion[posicion]
+
+                    # Crear una tabla con las métricas de comparación de los jugadores
+                    jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
+                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
+
+                    # Mostrar la tabla de comparación
+                    st.write(f"Comparación de jugadores para la posición: {posicion}")
+                    st.dataframe(jugadores_comparativos)
