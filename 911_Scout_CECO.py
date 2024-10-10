@@ -168,8 +168,35 @@ else:
             # Segunda pestaña: Player Radar Generation
             with tabs[1]:
                 st.header("Player Radar Generation")
-                st.write("Aquí se generará el radar de jugadores.")
-
+            
+                # Filtros adicionales en la segunda pestaña
+                selected_league = st.selectbox("Selecciona la liga:", sorted(combined_data['League'].unique()))
+                
+                # Filtrar equipos según la liga seleccionada
+                filtered_teams = combined_data[combined_data['League'] == selected_league]['Team'].unique()
+                selected_team = st.selectbox("Selecciona el equipo:", sorted(filtered_teams))
+                
+                # Filtro de edad
+                age_range = st.slider("Selecciona el rango de edad:", int(combined_data['Age'].min()), int(combined_data['Age'].max()), (18, 35))
+                
+                # Filtro de pierna preferida
+                selected_foot = st.selectbox("Selecciona el pie preferido:", sorted(combined_data['Foot'].unique()))
+            
+                # Filtrar los jugadores según los criterios seleccionados
+                jugadores_filtrados = combined_data[
+                    (combined_data['League'] == selected_league) &
+                    (combined_data['Team'] == selected_team) &
+                    (combined_data['Age'].between(age_range[0], age_range[1])) &
+                    (combined_data['Foot'] == selected_foot)
+                ]['Full name'].unique()
+            
+                # Select box para elegir un jugador específico
+                selected_player = st.selectbox("Selecciona el jugador:", sorted(jugadores_filtrados))
+            
+                # Mostrar los detalles del jugador seleccionado si hay un jugador elegido
+                if selected_player:
+                    st.write(f"Mostrando datos para el jugador: {selected_player}")
+            
             # Tercera pestaña: Scatter Plots
             with tabs[2]:
                 st.header("Scatter Plots")
