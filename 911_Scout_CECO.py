@@ -90,15 +90,21 @@ for url in file_urls:
 if not available_seasons:
     st.error("No se encontraron temporadas en los archivos CSV.")
 else:
-    selected_season = st.sidebar.selectbox("Selecciona el año o temporada", sorted(available_seasons))
+    # Cambiar el filtro de temporada a un multiselect
+    selected_seasons = st.sidebar.multiselect(
+        "Selecciona las temporadas", 
+        sorted(available_seasons), 
+        default=sorted(available_seasons)
+    )
 
+    # Filtrar los datos según las temporadas seleccionadas
     filtered_data = pd.concat(
-        [data for filename, data in data_by_season.items() if selected_season in filename],
+        [data for filename, data in data_by_season.items() if any(season in filename for season in selected_seasons)],
         ignore_index=True
     )
 
     if filtered_data.empty:
-        st.error(f"No se encontraron datos para la temporada {selected_season}.")
+        st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
     else:
         if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
             equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
@@ -158,4 +164,3 @@ else:
 
         else:
             st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
-
