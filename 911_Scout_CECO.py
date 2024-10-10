@@ -18,8 +18,8 @@ metricas_por_posicion = {
     'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
                   "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
                   "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
-    'Volantes Centrales + MCO': ["Minutes played", "Goals", "Assists per 90", "Duels won, %", "Defensive actions per 90",
-                                 "Defensive duels per 90", "Successful defensive actions per 90", "Long passes per 90", "Aerial duels per 90", 
+    'Volantes Centrales + MCO': ["Minutes played", "Goals", "Assists per 90", "Duels won, %", "Defensive actions per 90", 
+                                 "Defensive duels per 90", "Long passes per 90", "Aerial duels per 90", 
                                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90"],
     'Delantero + Extremos': ["Minutes played", "Goals per 90", "Assists per 90", "Shots per 90", "Shots on target, %", 
                              "Successful dribbles per 90", "Offensive duels per 90", "Received passes per 90", 
@@ -87,10 +87,15 @@ else:
             [data for filename, data in data_by_season.items() if any(season in filename for season in selected_seasons)],
             ignore_index=True
         )
-    
+        
+        # Mostrar las columnas disponibles en el DataFrame para depurar
+        st.write("Columnas disponibles en el DataFrame:", filtered_data.columns.tolist())
+
         if filtered_data.empty:
             st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
         else:
+            # El resto del código continúa igual...
+
             if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
                 equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
                 equipos_disponibles = [str(equipo) for equipo in equipos_disponibles]
