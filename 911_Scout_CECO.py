@@ -9,35 +9,26 @@ st.set_page_config(layout="wide")
 
 # Diccionario de métricas por posición
 metricas_por_posicion = {
+    # Diccionario de métricas por posición reorganizado según la solicitud
+metricas_por_posicion = {
     'Portero': ["Matches played", "Minutes played", "Conceded goals per 90", "xG against per 90", "Prevented goals per 90", "Save rate, %", 
                 "Exits per 90", "Aerial duels per 90", "Back passes received as GK per 90", 
                 "Accurate passes, %", "Accurate forward passes, %", "Accurate long passes, %"],
-    'Defensa': ["Matches played", "Minutes played", "Accelerations per 90", "Progressive runs per 90", "Aerial duels per 90", "Aerial duels won, %", 
-                "Defensive duels won, %", "Duels won, %", "Sliding tackles per 90", "Interceptions per 90", 
-                "Key passes per 90", "Short / medium passes per 90", "Forward passes per 90", "Long passes per 90", 
-                "Passes per 90", "PAdj Interceptions", "Accurate passes to final third, %", "Accurate forward passes, %", 
-                "Accurate back passes, %", "Accurate long passes, %", "Accurate passes, %"],
-    'Lateral': ["Matches played", "Minutes played", "Successful attacking actions per 90", "Successful defensive actions per 90", "Accelerations per 90", 
-                "Progressive runs per 90", "Crosses to goalie box per 90", "Crosses from final third per 90", 
-                "Aerial duels won, %", "Offensive duels won, %", "Defensive duels won, %", "Defensive duels per 90", 
-                "Duels won, %", "Interceptions per 90", "Passes per 90", "Forward passes per 90", 
-                "Accurate passes to penalty area, %", "Received passes per 90", "Accurate passes to final third, %", 
-                "Accurate through passes, %", "Accurate forward passes, %", "Accurate progressive passes, %", 
-                "Third assists per 90", "xA per 90"],
-    'Mediocampista': ["Matches played", "Minutes played", "Assists per 90", "xA per 90", "Offensive duels won, %", "Aerial duels won, %", 
-                      "Defensive duels won, %", "Interceptions per 90", "Received passes per 90", 
-                      "Accurate short / medium passes, %", "Accurate passes to final third, %", 
-                      "Accurate long passes, %", "Accurate progressive passes, %", "Successful dribbles, %", 
-                      "xG per 90", "Goals per 90"],
-    'Extremos': ["Matches played", "Minutes played", "xG per 90", "Goals per 90", "Assists per 90", "xA per 90", "Received passes per 90", 
-                 "Accurate crosses, %", "Accurate through passes, %", "Accurate progressive passes, %", 
-                 "Crosses to goalie box per 90", "Accurate passes to penalty area, %", "Offensive duels won, %", 
-                 "Defensive duels won, %", "Interceptions per 90", "Successful dribbles, %"],
-    "Delantero": ["Matches played", "Minutes played", "Goals per 90", "Head goals per 90", "Non-penalty goals per 90", "Goal conversion, %", 
-                  "xG per 90", "xA per 90", "Assists per 90", "Key passes per 90", "Passes per 90", 
-                  "Passes to penalty area per 90", "Passes to final third per 90", "Accurate passes, %", 
-                  "Accurate passes to final third, %", "Aerial duels won, %", "Duels won, %", 
-                  "Shots per 90", "Shots on target, %", "Touches in box per 90"]
+    'Centrales': ["Minutes played", "Defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Sliding tackles per 90", "Possession won after a tackle", "Shots blocked per 90", 
+                  "Possession won after an interception", "Forward passes per 90", "Through passes per 90", 
+                  "Head goals"],
+    'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
+                  "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
+    'Volantes Centrales + MCO': ["Minutes played", "Goals", "Assists per 90", "Duels won, %", "Defensive actions per 90", 
+                                 "Defensive duels per 90", "Long passes per 90", "Aerial duels per 90", 
+                                 "Interceptions per 90", "Forward passes per 90", "Through passes per 90"],
+    'Delantero + Extremos': ["Minutes played", "Assists per 90", "Duels per 90", "Successful attacking actions per 90",
+                             "Goals per 90", "Head goals per 90", "Shots per 90", "Shots on target, %",
+                             "Successful dribbles per 90", "Offensive duels per 90", "Received passes per 90", 
+                             "Accurate passes, %", "Forward passes per 90", "Accurate through passes per 90", 
+                             "Dribbles per 90"]
 }
 
 # Título de la aplicación
