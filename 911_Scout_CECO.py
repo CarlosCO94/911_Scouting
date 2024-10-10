@@ -7,26 +7,24 @@ from io import StringIO
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
-# Diccionario de métricas por posición corregido y revisado para asegurarse de que las llaves estén bien cerradas
+# Diccionario de métricas por posición corregido y actualizado según las métricas disponibles en el CSV
 metricas_por_posicion = {
-    'Portero': ["Matches played", "Minutes played", "Conceded goals per 90", "xG against per 90", "Prevented goals per 90", "Save rate, %", 
-                "Exits per 90", "Aerial duels per 90", "Back passes received as GK per 90", 
-                "Accurate passes, %", "Accurate forward passes, %", "Accurate long passes, %"],
+    'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", 
+                "xG against per 90", "Prevented goals per 90", "Back passes received as GK per 90", 
+                "Exits per 90", "Aerial duels per 90"],
     'Centrales': ["Minutes played", "Defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
                   "Sliding tackles per 90", "Possession won after a tackle", "Shots blocked per 90", 
-                  "Possession won after an interception", "Forward passes per 90", "Through passes per 90", 
-                  "Head goals"],
+                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90", "Head goals"],
     'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
                   "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
                   "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
     'Volantes Centrales + MCO': ["Minutes played", "Goals", "Assists per 90", "Duels won, %", "Defensive actions per 90", 
                                  "Defensive duels per 90", "Long passes per 90", "Aerial duels per 90", 
                                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90"],
-    'Delantero + Extremos': ["Minutes played", "Assists per 90", "Duels per 90", "Successful attacking actions per 90",
-                             "Goals per 90", "Head goals per 90", "Shots per 90", "Shots on target, %",
+    'Delantero + Extremos': ["Minutes played", "Goals per 90", "Assists per 90", "Shots per 90", "Shots on target, %", 
                              "Successful dribbles per 90", "Offensive duels per 90", "Received passes per 90", 
-                             "Accurate passes, %", "Forward passes per 90", "Accurate through passes per 90", 
-                             "Dribbles per 90"]
+                             "Crosses per 90", "Dribbles per 90", "Accurate passes, %", "Forward passes per 90", 
+                             "Through passes per 90"]
 }
 
 # Título de la aplicación
@@ -122,14 +120,22 @@ else:
     
                     jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
     
+                    # Crear una lista de métricas combinadas y filtrar las que realmente están en el DataFrame
+                    metricas_combinar = metricas_filtradas + metricas_seleccionadas
+                    metricas_disponibles = [metrica for metrica in metricas_combinar if metrica in jugadores_filtrados.columns]
+
+                    # Mostrar advertencia si alguna métrica no está disponible
+                    metricas_no_disponibles = [metrica for metrica in metricas_combinar if metrica not in jugadores_filtrados.columns]
+                    if metricas_no_disponibles:
+                        st.warning(f"Las siguientes métricas no están disponibles en los datos: {', '.join(metricas_no_disponibles)}")
+
+                    # Crear una tabla con las métricas de comparación de los jugadores utilizando solo las métricas disponibles
+                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_disponibles].transpose()
+    
                     # Crear una tabla con los logos de los equipos y los nombres de los jugadores
                     logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
                     logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
 
-                    # Crear una tabla con las métricas de comparación de los jugadores
-                    metricas_combinar = metricas_filtradas + metricas_seleccionadas  # Mantener todas las métricas seleccionadas en la tabla
-                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_combinar].transpose()
-    
                     # Alinear la tabla de logos con la tabla de métricas para una mejor presentación
                     logos_html.columns = jugadores_comparativos.columns
     
