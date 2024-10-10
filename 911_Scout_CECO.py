@@ -85,22 +85,25 @@ else:
                 st.error(f"No se encontraron datos para la temporada seleccionada: {selected_season}.")
             else:
                 if 'Full name' in filtered_data.columns:
-                    jugador_seleccionado = st.sidebar.selectbox(
-                        "Selecciona un jugador para comparar:", 
+                    jugadores_seleccionados = st.sidebar.multiselect(
+                        "Selecciona uno o más jugadores para comparar:", 
                         filtered_data['Full name'].unique()
                     )
 
-                    if jugador_seleccionado:
+                    if jugadores_seleccionados:
                         posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
-                        metricas_filtradas = metricas_por_posicion[posicion]
+                        metricas_filtradas = st.sidebar.multiselect(
+                            "Selecciona una o más métricas para mostrar:", 
+                            metricas_por_posicion[posicion]
+                        )
 
-                        # Crear una tabla con las métricas de comparación del jugador
-                        jugador_filtrado = filtered_data[filtered_data['Full name'] == jugador_seleccionado]
-                        jugador_comparativo = jugador_filtrado.set_index('Full name')[metricas_filtradas].transpose()
+                        # Crear una tabla con las métricas de comparación de los jugadores seleccionados
+                        jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)]
+                        jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
 
                         # Mostrar la tabla de comparación
-                        st.write(f"Comparación de métricas para el jugador: {jugador_seleccionado} en la posición: {posicion}")
-                        st.dataframe(jugador_comparativo)
+                        st.write(f"Comparación de jugadores para la posición: {posicion}")
+                        st.dataframe(jugadores_comparativos)
                 else:
                     st.error("La columna 'Full name' no se encuentra en los datos cargados.")
         else:
