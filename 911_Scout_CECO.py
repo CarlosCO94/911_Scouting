@@ -111,10 +111,9 @@ else:
             # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes y el logo del equipo
             if jugadores_seleccionados:
                 jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
-                
-                # Crear una fila con los logos de los equipos
-                logos_html = jugadores_data[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
-                logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
+
+                # Formatear el logo del equipo para mostrar en la tabla
+                jugadores_data['Team logo'] = jugadores_data['Team logo'].apply(lambda x: f'<img src="{x}" width="50">' if pd.notna(x) else '')
 
                 # Aplicar formato condicional para resaltar el valor más alto en cada fila
                 def resaltar_maximo(s):
@@ -122,12 +121,12 @@ else:
                     return ['background-color: yellow' if v else '' for v in is_max]
 
                 st.write(f"Datos para los jugadores seleccionados en la posición {posicion_seleccionada}:")
-                styled_data = jugadores_data.style.apply(resaltar_maximo, subset=metricas_finales, axis=0)
 
-                # Mostrar la tabla con los logos en la primera fila y las métricas resaltadas
-                st.write(logos_html.to_html(escape=False), unsafe_allow_html=True)
-                st.dataframe(styled_data)
+                # Mostrar la tabla con el nombre del jugador, el logo y las métricas resaltadas
+                styled_data = jugadores_data.style.apply(resaltar_maximo, subset=metricas_finales, axis=0).format(escape=False)
+                st.write(styled_data.to_html(), unsafe_allow_html=True)
         else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
         st.error("No se encontraron datos en los archivos CSV proporcionados.")
+
