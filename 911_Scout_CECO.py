@@ -77,13 +77,14 @@ if not file_urls:
 data_by_season = {}
 available_seasons = set()
 
+# Detectar temporadas únicamente en los nombres de archivos que contienen temporadas válidas
 for url in file_urls:
     data = cargar_datos_csv(url)
     if not data.empty:
-        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
+        # Ajustar la expresión regular para detectar años y temporadas de formato '20-21', '2021', etc.
+        matches = re.findall(r'\b(?:\d{4}|\d{2}-\d{2})\b', url.split('/')[-1])
         if matches:
-            for match in matches:
-                available_seasons.add(match)
+            available_seasons.update(matches)
         data_by_season[url.split('/')[-1]] = data
 
 # Verificar que hay temporadas disponibles
