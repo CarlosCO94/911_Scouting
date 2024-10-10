@@ -7,9 +7,6 @@ from io import StringIO
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
-# Diccionario de métricas por posición
-metricas_por_posicion = {
-    # Diccionario de métricas por posición reorganizado según la solicitud
 # Diccionario de métricas por posición corregido y revisado para asegurarse de que las llaves estén bien cerradas
 metricas_por_posicion = {
     'Portero': ["Matches played", "Minutes played", "Conceded goals per 90", "xG against per 90", "Prevented goals per 90", "Save rate, %", 
