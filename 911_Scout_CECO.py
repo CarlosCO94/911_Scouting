@@ -12,9 +12,9 @@ metricas_por_posicion = {
     'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", 
                 "xG against per 90", "Prevented goals per 90", "Back passes received as GK per 90", 
                 "Exits per 90", "Aerial duels per 90"],
-    'Centrales': ["Minutes played", "Defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
-                  "Sliding tackles per 90", "Possession won after a tackle", "Shots blocked per 90", 
-                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90", "Head goals"],
+    'Centrales': ["Minutes played", "Successful defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Sliding tackles per 90", "Shots blocked per 90", "Interceptions per 90", 
+                  "Forward passes per 90", "Through passes per 90", "Head goals"],
     'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
                   "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
                   "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
@@ -71,8 +71,12 @@ else:
     if data.empty:
         st.error("No se pudieron cargar los datos desde las URLs proporcionadas.")
     else:
-        # Mostrar las columnas disponibles en el DataFrame para depurar
+        # Mostrar todas las columnas disponibles en el DataFrame para depurar
         st.write("Columnas disponibles en el DataFrame:", data.columns.tolist())
+
+        # Verificar si la columna 'Team' existe y adaptarla si tiene otro nombre
+        if 'Team' not in data.columns:
+            st.error("La columna 'Team' no se encuentra en los datos. Verifica el nombre de las columnas en el CSV.")
 
         # Filtrado de temporadas utilizando la columna 'Season'
         available_seasons = sorted(data['Season'].unique())
