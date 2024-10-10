@@ -1,20 +1,20 @@
 import streamlit as st
 import pandas as pd
 import requests
+import re  # Para usar expresiones regulares
 from io import StringIO
-import re
 
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
-# Diccionario de métricas por posición
+# Diccionario de métricas por posición corregido y actualizado según las métricas disponibles en el CSV
 metricas_por_posicion = {
     'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", 
                 "xG against per 90", "Prevented goals per 90", "Back passes received as GK per 90", 
                 "Exits per 90", "Aerial duels per 90"],
-    'Centrales': ["Minutes played", "Successful defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
-                  "Sliding tackles per 90", "Shots blocked per 90", "Interceptions per 90", 
-                  "Forward passes per 90", "Through passes per 90", "Head goals"],
+    'Centrales': ["Minutes played", "Defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Sliding tackles per 90", "Possession won after a tackle", "Shots blocked per 90", 
+                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90", "Head goals"],
     'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
                   "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
                   "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
@@ -30,10 +30,10 @@ metricas_por_posicion = {
 # Título de la aplicación
 st.title("Comparación de Jugadores")
 
-# URL base de la API de GitHub para listar los archivos en la carpeta "Main APP"
+# URL de la carpeta "Main APP" en GitHub
 url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Main%20APP"
 
-# Función para cargar datos CSV desde una URL con caché
+# Función para cargar datos CSV con caché
 @st.cache_data
 def cargar_datos_csv(url):
     response = requests.get(url)
@@ -43,78 +43,124 @@ def cargar_datos_csv(url):
         st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
         return pd.DataFrame()
 
-# Función para obtener la lista de archivos CSV en la carpeta "Main APP" de GitHub
-def obtener_lista_archivos_csv(url_base):
+# Inicializar file_urls
+file_urls = []
+
+# Obtener la lista de archivos CSV en la carpeta "Main APP"
+try:
     response = requests.get(url_base)
     if response.status_code == 200:
         archivos = response.json()
-        return [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
+        file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
     else:
         st.error(f"Error al acceder a la carpeta Main APP: {response.status_code}")
-        return []
+except requests.RequestException as e:
+    st.error(f"Error de red al intentar acceder a la carpeta Main APP: {e}")
 
-# Obtener la lista de URLs de todos los archivos CSV en la carpeta "Main APP"
-csv_urls = obtener_lista_archivos_csv(url_base)
-
-# Verificar que se encontraron archivos CSV
-if not csv_urls:
+# Verificar que file_urls esté definido antes de su uso
+if not file_urls:
     st.error("No se encontraron archivos CSV en la carpeta Main APP.")
+
+data_by_season = {}
+available_seasons = set()
+
+for url in file_urls:
+    data = cargar_datos_csv(url)
+    if not data.empty:
+        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
+        if matches:
+            for match in matches:
+                if any(match in filename for filename in data_by_season):  # Verificar si la temporada existe en los archivos
+                    available_seasons.add(match)
+        data_by_season[url.split('/')[-1]] = data
+
+# Verificar que hay temporadas disponibles
+if not available_seasons:
+    st.error("No se encontraron temporadas en los archivos CSV.")
 else:
-    # Cargar y combinar todos los archivos CSV en un solo DataFrame
-    data_frames = []
-    for url in csv_urls:
-        df = cargar_datos_csv(url)
-        if not df.empty:
-            # Extraer la temporada del nombre del archivo usando regex
-            season = re.search(r'(\d{4})', url)
-            if season:
-                df['Season'] = season.group(1)  # Añadir la temporada como una nueva columna
-            data_frames.append(df)
-
-    if data_frames:
-        data = pd.concat(data_frames, ignore_index=True)
-    else:
-        data = pd.DataFrame()  # Si no se pudieron cargar los datos, crear un DataFrame vacío
-
-# Verificar si el DataFrame combinado está vacío
-if data.empty:
-    st.error("No se pudieron cargar los datos desde las URLs proporcionadas.")
-else:
-    # Mostrar las columnas disponibles en el DataFrame para depurar
-    st.write("Columnas disponibles en el DataFrame:", data.columns.tolist())
-
-    # Filtrado de temporadas utilizando la columna 'Season'
-    available_seasons = sorted(data['Season'].unique())
-    selected_season = st.sidebar.selectbox("Selecciona el año o temporada", available_seasons)
-
-    if selected_season:
-        filtered_data = data[data['Season'] == selected_season]
+    # Cambiar el selectbox para la selección de temporadas a un multiselect
+    selected_seasons = st.sidebar.multiselect("Selecciona el/los año(s) o temporada(s)", sorted(available_seasons))
+    
+    # Filtrar los datos para las temporadas seleccionadas
+    if selected_seasons:
+        filtered_data = pd.concat(
+            [data for filename, data in data_by_season.items() if any(season in filename for season in selected_seasons)],
+            ignore_index=True
+        )
+        
+        # Mostrar las columnas disponibles en el DataFrame para depurar
+        st.write("Columnas disponibles en el DataFrame:", filtered_data.columns.tolist())
 
         if filtered_data.empty:
-            st.error(f"No se encontraron datos para la temporada seleccionada: {selected_season}.")
+            st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
         else:
-            # Selección de múltiples jugadores para comparación
-            jugadores_seleccionados = st.sidebar.multiselect(
-                "Selecciona uno o más jugadores para comparar:", 
-                filtered_data['Full name'].unique()
-            )
+            # El resto del código continúa igual...
 
-            if jugadores_seleccionados:
-                posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
-                metricas_filtradas = st.sidebar.multiselect(
-                    "Selecciona una o más métricas para mostrar:", 
-                    metricas_por_posicion[posicion]
-                )
-
-                if metricas_filtradas:
-                    # Crear una tabla con las métricas de comparación de los jugadores seleccionados
-                    jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)]
-                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
-
-                    # Mostrar la tabla de comparación
-                    st.write(f"Comparación de jugadores para la posición: {posicion}")
-                    st.dataframe(jugadores_comparativos)
+            if 'Full name' in filtered_data.columns and 'Team logo' in filtered_data.columns and 'Team within selected timeframe' in filtered_data.columns:
+                equipos_disponibles = filtered_data['Team within selected timeframe'].unique()
+                equipos_disponibles = [str(equipo) for equipo in equipos_disponibles]
+                equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
+    
+                equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
+    
+                if equipo_seleccionado == 'Todos':
+                    jugadores_filtrados_por_equipo = filtered_data
                 else:
-                    st.warning("Por favor, selecciona al menos una métrica para mostrar.")
+                    jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team within selected timeframe'] == equipo_seleccionado]
+    
+                jugadores_comparacion = st.sidebar.multiselect(
+                    "Selecciona los jugadores para comparar (el primero será el jugador principal):", 
+                    jugadores_filtrados_por_equipo['Full name'].unique()
+                )
+    
+                if jugadores_comparacion:
+                    jugador_principal = jugadores_comparacion[0]
+    
+                    posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
+                    metricas_filtradas = metricas_por_posicion[posicion]
+    
+                    # Nuevo multiselect para seleccionar las métricas específicas del CSV
+                    todas_las_metricas = filtered_data.columns.tolist()
+                    metricas_seleccionadas = st.sidebar.multiselect("Selecciona las métricas a mostrar:", todas_las_metricas)
+    
+                    jugadores_filtrados = filtered_data[filtered_data['Full name'].isin(jugadores_comparacion)]
+    
+                    # Crear una lista de métricas combinadas y filtrar las que realmente están en el DataFrame
+                    metricas_combinar = metricas_filtradas + metricas_seleccionadas
+                    metricas_disponibles = [metrica for metrica in metricas_combinar if metrica in jugadores_filtrados.columns]
+
+                    # Mostrar advertencia si alguna métrica no está disponible
+                    metricas_no_disponibles = [metrica for metrica in metricas_combinar if metrica not in jugadores_filtrados.columns]
+                    if metricas_no_disponibles:
+                        st.warning(f"Las siguientes métricas no están disponibles en los datos: {', '.join(metricas_no_disponibles)}")
+
+                    # Crear una tabla con las métricas de comparación de los jugadores utilizando solo las métricas disponibles
+                    jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_disponibles].transpose()
+    
+                    # Crear una tabla con los logos de los equipos y los nombres de los jugadores
+                    logos_html = jugadores_filtrados[['Full name', 'Team logo']].drop_duplicates().set_index('Full name').T
+                    logos_html = logos_html.applymap(lambda url: f'<div style="text-align: center;"><img src="{url}" width="50"></div>')
+
+                    # Alinear la tabla de logos con la tabla de métricas para una mejor presentación
+                    logos_html.columns = jugadores_comparativos.columns
+    
+                    # Aplicar formato para resaltar los valores máximos de cada métrica
+                    jugadores_comparativos_html = jugadores_comparativos.apply(
+                        lambda row: row.apply(
+                            lambda x: f'<div style="text-align: center; background-color: yellow; color: black;">{x}</div>' if x == row.max() else f'<div style="text-align: center;">{x}</div>'
+                        ), axis=1
+                    )
+    
+                    # Combinar la tabla de logos y la tabla de métricas para la visualización final
+                    tabla_final = pd.concat([logos_html, jugadores_comparativos_html])
+    
+                    # Convertir la tabla a formato HTML y personalizar el estilo
+                    html_table = tabla_final.to_html(escape=False, classes='table table-bordered', border=0)
+                    html_table = html_table.replace('<th>', '<th style="text-align: center;">')
+    
+                    # Mostrar la tabla final en la aplicación
+                    st.write(html_table, unsafe_allow_html=True)
+            else:
+                st.error("No se encuentran todas las columnas necesarias ('Full name', 'Team logo', 'Team within selected timeframe') en los datos cargados.")
     else:
-        st.error("Por favor, selecciona una temporada.")
+        st.error("Por favor, selecciona al menos una temporada.") 
