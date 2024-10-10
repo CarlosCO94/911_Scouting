@@ -74,48 +74,34 @@ else:
         # Mostrar todas las columnas disponibles en el DataFrame para depurar
         st.write("Columnas disponibles en el DataFrame:", data.columns.tolist())
 
-        # Verificar si la columna 'Team' existe y adaptarla si tiene otro nombre
-        if 'Team' not in data.columns:
-            st.error("La columna 'Team' no se encuentra en los datos. Verifica el nombre de las columnas en el CSV.")
-
         # Filtrado de temporadas utilizando la columna 'Season'
         available_seasons = sorted(data['Season'].unique())
-        selected_seasons = st.sidebar.multiselect("Selecciona el/los año(s) o temporada(s)", available_seasons)
+        selected_season = st.sidebar.selectbox("Selecciona el año o temporada", available_seasons)
 
-        if selected_seasons:
-            filtered_data = data[data['Season'].isin(selected_seasons)]
+        if selected_season:
+            filtered_data = data[data['Season'] == selected_season]
 
             if filtered_data.empty:
-                st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
+                st.error(f"No se encontraron datos para la temporada seleccionada: {selected_season}.")
             else:
-                equipos_disponibles = sorted(filtered_data['Team'].unique())
-                equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", ['Todos'] + equipos_disponibles)
-
-                if equipo_seleccionado != 'Todos':
-                    jugadores_filtrados_por_equipo = filtered_data[filtered_data['Team'] == equipo_seleccionado]
-                else:
-                    jugadores_filtrados_por_equipo = filtered_data
-
-                if 'Full name' in jugadores_filtrados_por_equipo.columns:
-                    jugadores_comparacion = st.sidebar.multiselect(
-                        "Selecciona los jugadores para comparar (el primero será el jugador principal):", 
-                        jugadores_filtrados_por_equipo['Full name'].unique()
+                if 'Full name' in filtered_data.columns:
+                    jugador_seleccionado = st.sidebar.selectbox(
+                        "Selecciona un jugador para comparar:", 
+                        filtered_data['Full name'].unique()
                     )
 
-                    if jugadores_comparacion:
-                        jugador_principal = jugadores_comparacion[0]
-
+                    if jugador_seleccionado:
                         posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
                         metricas_filtradas = metricas_por_posicion[posicion]
 
-                        # Crear una tabla con las métricas de comparación de los jugadores
-                        jugadores_filtrados = jugadores_filtrados_por_equipo[jugadores_filtrados_por_equipo['Full name'].isin(jugadores_comparacion)]
-                        jugadores_comparativos = jugadores_filtrados.set_index('Full name')[metricas_filtradas].transpose()
+                        # Crear una tabla con las métricas de comparación del jugador
+                        jugador_filtrado = filtered_data[filtered_data['Full name'] == jugador_seleccionado]
+                        jugador_comparativo = jugador_filtrado.set_index('Full name')[metricas_filtradas].transpose()
 
                         # Mostrar la tabla de comparación
-                        st.write(f"Comparación de jugadores para la posición: {posicion}")
-                        st.dataframe(jugadores_comparativos)
+                        st.write(f"Comparación de métricas para el jugador: {jugador_seleccionado} en la posición: {posicion}")
+                        st.dataframe(jugador_comparativo)
                 else:
                     st.error("La columna 'Full name' no se encuentra en los datos cargados.")
         else:
-            st.error("Por favor, selecciona al menos una temporada.")
+            st.error("Por favor, selecciona una temporada.")
