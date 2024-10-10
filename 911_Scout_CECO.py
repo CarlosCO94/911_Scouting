@@ -7,8 +7,11 @@ from io import StringIO
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
+# URL base para acceder a los archivos directamente en GitHub
+base_raw_url = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Main%20APP/"
+
 # URL de la API de GitHub para obtener el contenido de la carpeta "Main APP"
-url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Main%20APP"
+api_url = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Main%20APP"
 
 # Función para cargar datos CSV con caché
 @st.cache_data
@@ -20,14 +23,14 @@ def cargar_datos_csv(url):
         st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
         return pd.DataFrame()
 
-# Obtener la lista de archivos CSV en la carpeta "Main APP" del repositorio
+# Obtener la lista de archivos CSV en la carpeta "Main APP" del repositorio utilizando la API de GitHub
 file_urls = []
 try:
-    response = requests.get(url_base)
+    response = requests.get(api_url)
     if response.status_code == 200:
         archivos = response.json()
         # Generar la URL de descarga directa para cada archivo CSV encontrado
-        file_urls = [file['download_url'] for file in archivos if file['name'].endswith('.csv')]
+        file_urls = [base_raw_url + file['name'] for file in archivos if file['name'].endswith('.csv')]
         file_names = [file['name'] for file in archivos if file['name'].endswith('.csv')]
     else:
         st.error(f"Error al acceder a la carpeta Main APP: {response.status_code}")
@@ -96,5 +99,3 @@ else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
         st.error("No se encontraron datos en los archivos CSV proporcionados.")
-
-
