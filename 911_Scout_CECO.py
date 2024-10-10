@@ -78,8 +78,12 @@ else:
     if data_frames:
         combined_data = pd.concat(data_frames, ignore_index=True)
 
-        # Verificar si la columna 'Season' existe antes de continuar
-        if 'Season' in combined_data.columns:
+        # Verificar si las columnas 'Full name' y 'Team logo' existen antes de continuar
+        required_columns = ['Full name', 'Team logo']
+        missing_columns = [col for col in required_columns if col not in combined_data.columns]
+        if missing_columns:
+            st.error(f"Las siguientes columnas necesarias no están presentes en los datos: {', '.join(missing_columns)}")
+        else:
             st.sidebar.header("Opciones de Comparación de Jugadores")
 
             # Multiselect para seleccionar temporadas
@@ -102,32 +106,28 @@ else:
             metricas_adicionales = st.sidebar.multiselect("Selecciona métricas adicionales:", todas_las_metricas)
 
             # Unir las métricas por posición y las métricas adicionales seleccionadas
-            metricas_finales = list(set(metricas_filtradas + metricas_adicionales))
+            metricas_finales = [metrica for metrica in metricas_filtradas + metricas_adicionales if metrica in filtered_data.columns]
 
             # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes y el logo del equipo
             if jugadores_seleccionados:
                 jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
 
-                # Construir la tabla HTML con los logos en la primera fila
-                html_table = '<table border="1"><tr><th>Logo</th>'
+                # Construir la tabla HTML con los logos en la primera fila y nombres de jugadores centrados
+                html_table = '<table border="1" style="text-align: center;"><tr><th>Logo</th>'
                 html_table += ''.join([f'<th><img src="{jugadores_data.loc[jugadores_data["Full name"] == jugador, "Team logo"].values[0]}" width="50"></th>' for jugador in jugadores_seleccionados])
                 html_table += '</tr><tr><th>Jugador</th>'
-                html_table += ''.join([f'<th>{jugador}</th>' for jugador in jugadores_seleccionados])
+                html_table += ''.join([f'<th style="text-align: center;">{jugador}</th>' for jugador in jugadores_seleccionados])
                 html_table += '</tr>'
 
                 for metrica in metricas_finales:
                     html_table += f'<tr><td>{metrica}</td>'
                     for jugador in jugadores_seleccionados:
-                        value = jugadores_data.loc[jugadores_data['Full name'] == jugador, metrica].values[0]
+                        value = jugadores_data.loc[jugadores_data['Full name'] == jugador, metrica].values[0] if metrica in jugadores_data else ''
                         cell_color = 'background-color: yellow;' if value == jugadores_data[metrica].max() else ''
-                        html_table += f'<td style="{cell_color}">{value}</td>'
+                        html_table += f'<td style="{cell_color}; text-align: center;">{value}</td>'
                     html_table += '</tr>'
 
                 html_table += '</table>'
 
                 # Mostrar la tabla HTML en Streamlit
                 st.markdown(html_table, unsafe_allow_html=True)
-        else:
-            st.error("La columna 'Season' no está presente en los datos combinados.")
-    else:
-        st.error("No se encontraron datos en los archivos CSV proporcionados.")
