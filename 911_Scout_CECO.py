@@ -93,40 +93,18 @@ def traducir_metricas(metrica):
     }
     return traducciones.get(metrica, metrica)
 
-metricas_por_posicion = {
-    'Portero': [
-        "Minutes played", "Conceded goals per 90", "Shots against per 90", 
-        "Clean sheets", "Save rate, %", "xG against per 90", "Prevented goals per 90", 
-        "Back passes received as GK per 90", "Exits per 90", "Aerial duels per 90"
-    ],
-    'Centrales': [
-        "Minutes played", "Successful defensive actions per 90", "Defensive duels per 90", 
-        "Aerial duels per 90", "Sliding tackles per 90", "Shots blocked per 90", 
-        "Interceptions per 90", "PAdj Interceptions", "Forward passes per 90", 
-        "Through passes per 90", "Head goals"
-    ],
-    'Laterales': [
-        "Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", 
-        "Aerial duels per 90", "Shots blocked per 90", "Interceptions per 90", 
-        "Goals per 90", "Shots per 90", "Crosses per 90", "Dribbles per 90", 
-        "Offensive duels per 90", "Forward passes per 90"
-    ],
-    'Volantes Centrales + MCO': [
-        "Minutes played", "Goals", "Assists per 90", "Duels won, %", 
-        "Successful defensive actions per 90", "Defensive duels per 90", 
-        "Long passes per 90", "Aerial duels per 90", "Interceptions per 90", 
-        "Forward passes per 90", "Through passes per 90"
-    ],
-    'Delantero + Extremos': [
-        "Minutes played", "Goals per 90", "Assists per 90", "Shots per 90", 
-        "Shots on target, %", "Successful dribbles per 90", "Offensive duels per 90", 
-        "Received passes per 90", "Crosses per 90", "Dribbles per 90", 
-        "Accurate passes, %", "Forward passes per 90", "Through passes per 90"
-    ]
-}
-# Inicializar file_urls
-file_urls = []
+# Función para normalizar los nombres de las columnas en minúsculas y sin espacios extra
+def normalizar_nombre_metrica(metrica):
+    return metrica.strip().lower().replace(" ", "_")
 
+# Definición de las métricas por posición
+metricas_por_posicion = {
+    'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", "xG against per 90", "Prevented goals per 90", "Back passes received as GK per 90", "Exits per 90", "Aerial duels per 90"],
+    'Centrales': ["Minutes played", "Successful defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", "Sliding tackles per 90", "Shots blocked per 90", "Interceptions per 90", "PAdj Interceptions", "Forward passes per 90", "Through passes per 90", "Head goals"],
+    'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", "Crosses per 90", "Dribbles per 90", "Offensive duels per 90", "Forward passes per 90"],
+    'Volantes Centrales + MCO': ["Minutes played", "Goals", "Assists per 90", "Duels won, %", "Successful defensive actions per 90", "Defensive duels per 90", "Long passes per 90", "Aerial duels per 90", "Interceptions per 90", "Forward passes per 90", "Through passes per 90"],
+    'Delantero + Extremos': ["Minutes played", "Goals per 90", "Assists per 90", "Shots per 90", "Shots on target, %", "Successful dribbles per 90", "Offensive duels per 90", "Received passes per 90", "Crosses per 90", "Dribbles per 90", "Accurate passes, %", "Forward passes per 90", "Through passes per 90"]
+}
 # URL de la carpeta "Main APP" en GitHub
 url_base = "https://api.github.com/repos/CarlosCO94/911_Scouting/contents/Main%20APP"
 
@@ -139,6 +117,9 @@ def cargar_datos_csv(url):
     else:
         st.error(f"Error al cargar el archivo: {url}. Código de estado: {response.status_code}")
         return pd.DataFrame()
+
+# Inicializar file_urls
+file_urls = []
 
 # Obtener la lista de archivos CSV en la carpeta "Main APP"
 try:
@@ -154,20 +135,23 @@ except requests.RequestException as e:
 # Verificar que file_urls esté definido antes de su uso
 if not file_urls:
     st.error("No se encontraron archivos CSV en la carpeta Main APP.")
-else:
-    data_by_season = {}
-    available_seasons = set()
 
-    for url in file_urls:
-        data = cargar_datos_csv(url)
-        if not data.empty:
-            data.columns = [traducir_metricas(col) for col in data.columns]  # Traducir columnas
-            matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
-            if matches:
-                for match in matches:
-                    available_seasons.add(match)
-            data_by_season[url.split('/')[-1]] = data
+data_by_season = {}
+available_seasons = set()
 
+# Cargar y procesar los datos desde los CSV
+for url in file_urls:
+    data = cargar_datos_csv(url)
+    if not data.empty:
+        matches = re.findall(r'(\d{4}|\d{2}-\d{2})', url.split('/')[-1])
+        if matches:
+            for match in matches:
+                available_seasons.add(match)
+        data_by_season[url.split('/')[-1]] = data
+
+# Normalizar las métricas en el DataFrame
+for key in data_by_season:
+    data_by_season[key].columns = [normalizar_nombre_metrica(col) for col in data_by_season[key].columns]
 # Verificar que hay temporadas disponibles
 if not available_seasons:
     st.error("No se encontraron temporadas en los archivos CSV.")
@@ -183,39 +167,30 @@ else:
         if filtered_data.empty:
             st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
         else:
-            st.write("Columnas disponibles en el DataFrame:", [traducir_metricas(col) for col in filtered_data.columns])
+            # Selección de jugadores y posiciones
+            jugadores_comparacion = st.sidebar.multiselect(
+                "Selecciona los jugadores para comparar (el primero será el jugador principal):", 
+                filtered_data['full_name'].unique()
+            )
 
-            # Selección de equipo y jugadores
-            if 'Nombre completo' in filtered_data.columns and 'Logo del equipo' in filtered_data.columns and 'Equipo en el periodo seleccionado' in filtered_data.columns:
-                equipos_disponibles = filtered_data['Equipo en el periodo seleccionado'].unique()
-                equipos_disponibles = ['Todos'] + sorted(equipos_disponibles)
-                equipo_seleccionado = st.sidebar.selectbox("Selecciona el equipo", equipos_disponibles)
+            if jugadores_comparacion:
+                posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
+                metricas_filtradas = metricas_por_posicion[posicion]
 
-                if equipo_seleccionado == 'Todos':
-                    jugadores_filtrados_por_equipo = filtered_data
-                else:
-                    jugadores_filtrados_por_equipo = filtered_data[filtered_data['Equipo en el periodo seleccionado'] == equipo_seleccionado]
+                # Multiselect para seleccionar las métricas específicas del CSV
+                todas_las_metricas = filtered_data.columns.tolist()
+                metricas_seleccionadas = st.sidebar.multiselect("Selecciona las métricas a mostrar:", todas_las_metricas)
 
-                jugadores_comparacion = st.sidebar.multiselect("Selecciona los jugadores para comparar:", jugadores_filtrados_por_equipo['Nombre completo'].unique())
+                metricas_combinar = metricas_filtradas + metricas_seleccionadas
+                metricas_disponibles = [metrica for metrica in metricas_combinar if metrica in filtered_data.columns]
 
-                if jugadores_comparacion:
-                    posicion = st.sidebar.selectbox("Selecciona la posición para mostrar las métricas correspondientes:", metricas_por_posicion.keys())
-                    metricas_filtradas = metricas_por_posicion[posicion]
+                # Advertencia si alguna métrica no está disponible
+                metricas_no_disponibles = [metrica for metrica in metricas_combinar if metrica not in filtered_data.columns]
+                if metricas_no_disponibles:
+                    st.warning(f"Las siguientes métricas no están disponibles en los datos: {', '.join(metricas_no_disponibles)}")
 
-                    # Multiselect para seleccionar las métricas específicas del CSV
-                    todas_las_metricas = filtered_data.columns.tolist()
-                    metricas_seleccionadas = st.sidebar.multiselect("Selecciona las métricas a mostrar:", todas_las_metricas)
+                # Crear tabla de comparación de jugadores
+                jugadores_comparativos = filtered_data.set_index('full_name')[metricas_disponibles].transpose()
 
-                    metricas_combinar = metricas_filtradas + metricas_seleccionadas
-                    metricas_disponibles = [metrica for metrica in metricas_combinar if metrica in jugadores_filtrados_por_equipo.columns]
-
-                    # Advertencia si alguna métrica no está disponible
-                    metricas_no_disponibles = [metrica for metrica in metricas_combinar if metrica not in jugadores_filtrados_por_equipo.columns]
-                    if metricas_no_disponibles:
-                        st.warning(f"Las siguientes métricas no están disponibles en los datos: {', '.join(metricas_no_disponibles)}")
-
-                    # Crear tabla de comparación de jugadores
-                    jugadores_comparativos = jugadores_filtrados_por_equipo.set_index('Nombre completo')[metricas_disponibles].transpose()
-
-                    # Mostrar la tabla
-                    st.write(jugadores_comparativos)
+                # Mostrar la tabla de comparación
+                st.write(jugadores_comparativos)
