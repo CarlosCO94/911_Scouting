@@ -77,30 +77,26 @@ else:
     # Combinar los dataframes si hay más de uno
     if data_frames:
         combined_data = pd.concat(data_frames, ignore_index=True)
-        st.write("Datos combinados:", combined_data)
-        
-        # Mostrar las columnas disponibles para depurar
-        st.write("Columnas disponibles en el DataFrame combinado:", combined_data.columns.tolist())
 
         # Verificar si la columna 'Season' existe antes de continuar
         if 'Season' in combined_data.columns:
             st.sidebar.header("Opciones de Comparación de Jugadores")
-            
+
             # Multiselect para seleccionar temporadas
             available_seasons = sorted(combined_data['Season'].unique())
             selected_seasons = st.sidebar.multiselect("Selecciona las temporadas:", available_seasons)
-            
+
             # Filtrar los datos para las temporadas seleccionadas
             filtered_data = combined_data[combined_data['Season'].isin(selected_seasons)]
-            
+
             # Multiselect para seleccionar jugadores
             jugadores_disponibles = sorted(filtered_data['Full name'].unique())
             jugadores_seleccionados = st.sidebar.multiselect("Selecciona los jugadores:", jugadores_disponibles)
-            
+
             # Select box para seleccionar la posición del jugador y mostrar las métricas correspondientes
             posicion_seleccionada = st.sidebar.selectbox("Selecciona la posición del jugador:", metricas_por_posicion.keys())
             metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
-            
+
             # Multiselect para seleccionar métricas adicionales
             todas_las_metricas = sorted([col for col in combined_data.columns if col not in ['Full name', 'Season', 'Team logo']])
             metricas_adicionales = st.sidebar.multiselect("Selecciona métricas adicionales:", todas_las_metricas)
@@ -112,21 +108,24 @@ else:
             if jugadores_seleccionados:
                 jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
 
-                # Formatear el logo del equipo para mostrar en la tabla
-                jugadores_data['Team logo'] = jugadores_data['Team logo'].apply(lambda x: f'<img src="{x}" width="50">' if pd.notna(x) else '')
+                # Construir la tabla HTML
+                html_table = '<table border="1"><tr><th>Jugador</th><th>Logo</th>'
+                html_table += ''.join([f'<th>{metrica}</th>' for metrica in metricas_finales])
+                html_table += '</tr>'
 
-                # Aplicar formato condicional para resaltar el valor más alto en cada fila
-                def resaltar_maximo(s):
-                    is_max = s == s.max()
-                    return ['background-color: yellow' if v else '' for v in is_max]
+                for _, row in jugadores_data.iterrows():
+                    html_table += f'<tr><td>{row["Full name"]}</td><td><img src="{row["Team logo"]}" width="50"></td>'
+                    for metrica in metricas_finales:
+                        value = row[metrica]
+                        cell_color = 'background-color: yellow;' if value == jugadores_data[metrica].max() else ''
+                        html_table += f'<td style="{cell_color}">{value}</td>'
+                    html_table += '</tr>'
 
-                st.write(f"Datos para los jugadores seleccionados en la posición {posicion_seleccionada}:")
+                html_table += '</table>'
 
-                # Mostrar la tabla con el nombre del jugador, el logo y las métricas resaltadas
-                styled_data = jugadores_data.style.apply(resaltar_maximo, subset=metricas_finales, axis=0).format(escape=False)
-                st.write(styled_data.to_html(), unsafe_allow_html=True)
+                # Mostrar la tabla HTML en Streamlit
+                st.markdown(html_table, unsafe_allow_html=True)
         else:
             st.error("La columna 'Season' no está presente en los datos combinados.")
     else:
         st.error("No se encontraron datos en los archivos CSV proporcionados.")
-
