@@ -89,7 +89,7 @@ else:
         )
         
         # Mostrar las columnas disponibles en el DataFrame para depurar
-        st.write("Columnas disponibles en el DataFrame:", filtered_data.columns.tolist())
+        #st.write("Columnas disponibles en el DataFrame:", filtered_data.columns.tolist())
 
         if filtered_data.empty:
             st.error(f"No se encontraron datos para las temporadas seleccionadas: {', '.join(selected_seasons)}.")
