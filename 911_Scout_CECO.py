@@ -7,6 +7,34 @@ from io import StringIO
 # Configuración para que la página siempre se ejecute en modo wide
 st.set_page_config(layout="wide")
 
+# Añadir CSS personalizado para el diseño de las pestañas
+st.markdown("""
+    <style>
+        .stTabs [role="tablist"] {
+            border-bottom: 2px solid #E694FF;
+        }
+        .stTabs [role="tab"] {
+            background: #333;
+            color: white;
+            font-weight: bold;
+            border: 1px solid #E694FF;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .stTabs [role="tab"][aria-selected="true"] {
+            background: #E694FF;
+            color: black;
+        }
+        .stTabs [role="tabpanel"] {
+            border: 1px solid #E694FF;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Diccionario de métricas por posición
 metricas_por_posicion = {
     'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", 
@@ -84,50 +112,67 @@ else:
         if missing_columns:
             st.error(f"Las siguientes columnas necesarias no están presentes en los datos: {', '.join(missing_columns)}")
         else:
-            st.sidebar.header("Opciones de Comparación de Jugadores")
+            # Crear pestañas para organizar la interfaz de la aplicación
+            tabs = st.tabs(["Player Radar Generation", "Player Search, Filters", "Player Search, Results", "Scatter Plots"])
 
-            # Multiselect para seleccionar temporadas
-            available_seasons = sorted(combined_data['Season'].unique())
-            selected_seasons = st.sidebar.multiselect("Selecciona las temporadas:", available_seasons)
+            # Primera pestaña: Player Radar Generation
+            with tabs[0]:
+                st.header("Player Radar Generation")
+                st.write("Aquí se generará el radar de jugadores.")
 
-            # Filtrar los datos para las temporadas seleccionadas
-            filtered_data = combined_data[combined_data['Season'].isin(selected_seasons)]
+            # Segunda pestaña: Player Search, Filters
+            with tabs[1]:
+                st.header("Player Search, Filters")
 
-            # Multiselect para seleccionar jugadores
-            jugadores_disponibles = sorted(filtered_data['Full name'].unique())
-            jugadores_seleccionados = st.sidebar.multiselect("Selecciona los jugadores:", jugadores_disponibles)
+                # Multiselect para seleccionar temporadas
+                available_seasons = sorted(combined_data['Season'].unique())
+                selected_seasons = st.multiselect("Selecciona las temporadas:", available_seasons)
 
-            # Select box para seleccionar la posición del jugador y mostrar las métricas correspondientes
-            posicion_seleccionada = st.sidebar.selectbox("Selecciona la posición del jugador:", metricas_por_posicion.keys())
-            metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
+                # Filtrar los datos para las temporadas seleccionadas
+                filtered_data = combined_data[combined_data['Season'].isin(selected_seasons)]
 
-            # Multiselect para seleccionar métricas adicionales
-            todas_las_metricas = sorted([col for col in combined_data.columns if col not in ['Full name', 'Season', 'Team logo']])
-            metricas_adicionales = st.sidebar.multiselect("Selecciona métricas adicionales:", todas_las_metricas)
+                # Multiselect para seleccionar jugadores
+                jugadores_disponibles = sorted(filtered_data['Full name'].unique())
+                jugadores_seleccionados = st.multiselect("Selecciona los jugadores:", jugadores_disponibles)
 
-            # Unir las métricas por posición y las métricas adicionales seleccionadas
-            metricas_finales = [metrica for metrica in metricas_filtradas + metricas_adicionales if metrica in filtered_data.columns]
+                # Select box para seleccionar la posición del jugador y mostrar las métricas correspondientes
+                posicion_seleccionada = st.selectbox("Selecciona la posición del jugador:", metricas_por_posicion.keys())
+                metricas_filtradas = metricas_por_posicion[posicion_seleccionada]
 
-            # Mostrar los datos de los jugadores seleccionados con las métricas correspondientes y el logo del equipo
-            if jugadores_seleccionados:
-                jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
+                # Multiselect para seleccionar métricas adicionales
+                todas_las_metricas = sorted([col for col in combined_data.columns if col not in ['Full name', 'Season', 'Team logo']])
+                metricas_adicionales = st.multiselect("Selecciona métricas adicionales:", todas_las_metricas)
 
-                # Construir la tabla HTML con los logos en la primera fila y nombres de jugadores centrados
-                html_table = '<table border="1" style="text-align: center;"><tr><th>Logo</th>'
-                html_table += ''.join([f'<th><img src="{jugadores_data.loc[jugadores_data["Full name"] == jugador, "Team logo"].values[0]}" width="50"></th>' for jugador in jugadores_seleccionados])
-                html_table += '</tr><tr><th>Jugador</th>'
-                html_table += ''.join([f'<th style="text-align: center;">{jugador}</th>' for jugador in jugadores_seleccionados])
-                html_table += '</tr>'
+                # Unir las métricas por posición y las métricas adicionales seleccionadas
+                metricas_finales = [metrica for metrica in metricas_filtradas + metricas_adicionales if metrica in filtered_data.columns]
 
-                for metrica in metricas_finales:
-                    html_table += f'<tr><td>{metrica}</td>'
-                    for jugador in jugadores_seleccionados:
-                        value = jugadores_data.loc[jugadores_data['Full name'] == jugador, metrica].values[0] if metrica in jugadores_data else ''
-                        cell_color = 'background-color: yellow;' if value == jugadores_data[metrica].max() else ''
-                        html_table += f'<td style="{cell_color}; text-align: center;">{value}</td>'
+            # Tercera pestaña: Player Search, Results
+            with tabs[2]:
+                st.header("Player Search, Results")
+                if jugadores_seleccionados:
+                    jugadores_data = filtered_data[filtered_data['Full name'].isin(jugadores_seleccionados)][['Full name', 'Team logo'] + metricas_finales]
+
+                    # Construir la tabla HTML con los logos en la primera fila y nombres de jugadores centrados
+                    html_table = '<table border="1" style="text-align: center;"><tr><th>Logo</th>'
+                    html_table += ''.join([f'<th><img src="{jugadores_data.loc[jugadores_data["Full name"] == jugador, "Team logo"].values[0]}" width="50"></th>' for jugador in jugadores_seleccionados])
+                    html_table += '</tr><tr><th>Jugador</th>'
+                    html_table += ''.join([f'<th style="text-align: center;">{jugador}</th>' for jugador in jugadores_seleccionados])
                     html_table += '</tr>'
 
-                html_table += '</table>'
+                    for metrica in metricas_finales:
+                        html_table += f'<tr><td>{metrica}</td>'
+                        for jugador in jugadores_seleccionados:
+                            value = jugadores_data.loc[jugadores_data['Full name'] == jugador, metrica].values[0] if metrica in jugadores_data else ''
+                            cell_color = 'background-color: yellow;' if value == jugadores_data[metrica].max() else ''
+                            html_table += f'<td style="{cell_color}; text-align: center;">{value}</td>'
+                        html_table += '</tr>'
 
-                # Mostrar la tabla HTML en Streamlit
-                st.markdown(html_table, unsafe_allow_html=True)
+                    html_table += '</table>'
+
+                    # Mostrar la tabla HTML en la pestaña "Player Search, Results"
+                    st.markdown(html_table, unsafe_allow_html=True)
+
+            # Cuarta pestaña: Scatter Plots
+            with tabs[3]:
+                st.header("Scatter Plots")
+                st.write("Aquí se mostrarán los gráficos de dispersión.")
