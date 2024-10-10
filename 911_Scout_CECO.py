@@ -12,8 +12,8 @@ metricas_por_posicion = {
     'Portero': ["Minutes played", "Conceded goals per 90", "Shots against per 90", "Clean sheets", "Save rate, %", 
                 "xG against per 90", "Prevented goals per 90", "Back passes received as GK per 90", 
                 "Exits per 90", "Aerial duels per 90"],
-    'Centrales': ["Minutes played", "Defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
-                  "Sliding tackles per 90", "Possession won after a tackle", "Shots blocked per 90", 
+    'Centrales': ["Minutes played", "Successful defensive actions per 90", "Defensive duels per 90", "Aerial duels per 90", 
+                  "Sliding tackles per 90", "Shots blocked per 90", 
                   "Interceptions per 90", "Forward passes per 90", "Through passes per 90", "Head goals"],
     'Laterales': ["Minutes played", "Assists per 90", "Duels per 90", "Defensive duels per 90", "Aerial duels per 90", 
                   "Shots blocked per 90", "Interceptions per 90", "Goals per 90", "Shots per 90", 
@@ -22,7 +22,7 @@ metricas_por_posicion = {
                                  "Defensive duels per 90", "Long passes per 90", "Aerial duels per 90", 
                                  "Interceptions per 90", "Forward passes per 90", "Through passes per 90"],
     'Delantero + Extremos': ["Minutes played", "Goals per 90", "Assists per 90", "Shots per 90", "Shots on target, %", 
-                             "Successful dribbles per 90", "Offensive duels per 90", "Received passes per 90", 
+                             "Successful dribbles, %", "Offensive duels per 90", "Received passes per 90", 
                              "Crosses per 90", "Dribbles per 90", "Accurate passes, %", "Forward passes per 90", 
                              "Through passes per 90"]
 }
