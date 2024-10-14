@@ -15,7 +15,6 @@ def get_csv_files():
     # Verificar si la respuesta fue exitosa
     if response.status_code == 200:
         files = response.json()
-        # Asegurarse de que la respuesta sea una lista
         if isinstance(files, list):
             csv_files = [file['name'] for file in files if isinstance(file, dict) and file['name'].endswith('.csv')]
             return csv_files
@@ -156,7 +155,21 @@ if data_frames:
         st.write("Datos combinados:")
     
     # Mostrar solo las columnas seleccionadas, incluyendo Competencia y Team logo
-    result_columns = ['Full name', 'Team logo', 'Team', 'Competition', 'Foot', 'Age', 'Height', 'Matches played', 'Minutes played']
+    result_columns = [
+        'Full name', 
+        'Team logo', 
+        'Team', 
+        'Competition', 
+        'Foot', 
+        'Age', 
+        'Height', 
+        'Matches played', 
+        'Minutes played', 
+        'Defensive duels per 90', 
+        'Defensive duels won, %', 
+        'Offensive duels per 90', 
+        'Offensive duels won, %'
+    ]
     
     # Mostrar el logo del equipo utilizando HTML
     combined_data['Team logo'] = combined_data['Team logo'].apply(lambda x: f'<img src="{x}" width="50" height="50">')
