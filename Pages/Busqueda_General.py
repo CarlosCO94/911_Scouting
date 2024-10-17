@@ -20,9 +20,6 @@ def load_csv(file_name):
     data = pd.read_csv(url, encoding='utf-8')
     return data
 
-# Título y subtítulo
-st.title("Búsqueda General")
-
 # Obtener archivos CSV
 csv_files = get_csv_files()
 
