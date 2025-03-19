@@ -21,622 +21,541 @@ from scipy import stats
 from math import pi
 from matplotlib.patches import FancyArrowPatch
 
-# Diccionario de métricas por posición
-metrics_by_position = {
-    'Portero': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Conceded goals per 90", "Goles concedidos por 90 minutos", "Defensa"),
-        ("xG against per 90", "xG en contra por 90 minutos", "Defensa"),
-        ("Prevented goals per 90", "Goles evitados por 90 minutos", "Defensa"),
-        ("Save rate, %", "Tasa de paradas, %", "Defensa"),
-        ("Exits per 90", "Salidas por 90 minutos", "Defensa"),
-        ("Aerial duels per 90", "Duelos aéreos por 90 minutos", "Defensa"),
-        ("Back passes received as GK per 90", "Pases atrás recibidos como portero por 90 minutos", "Pases"),
-        ("Accurate passes, %", "Pases precisos, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases")
-    ],
-    'Defensa': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Aerial duels per 90", "Duelos aéreos por 90 minutos", "Defensa"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Sliding tackles per 90", "Entradas deslizantes por 90 minutos", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Key passes per 90", "Pases clave por 90 minutos", "Pases"),
-        ("Short / medium passes per 90", "Pases cortos/medios por 90 minutos", "Pases"),
-        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
-        ("Long passes per 90", "Pases largos por 90 minutos", "Pases"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate back passes, %", "Pases precisos hacia atrás, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases"),
-        ("Accurate passes, %", "Pases precisos, %", "Pases"),
-        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
-        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque")
-    ],
-    'Lateral Izquierdo': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Successful defensive actions per 90", "Acciones defensivas exitosas por 90 minutos", "Defensa"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Defensive duels per 90", "Duelos defensivos por 90 minutos", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
-        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful attacking actions per 90", "Acciones ofensivas exitosas por 90 minutos", "Ataque"),
-        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
-        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque"),
-        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque"),
-        ("Third assists per 90", "Terceras asistencias por 90 minutos", "Ataque")
-    ],
-    'Lateral Derecho': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Successful defensive actions per 90", "Acciones defensivas exitosas por 90 minutos", "Defensa"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Defensive duels per 90", "Duelos defensivos por 90 minutos", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
-        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful attacking actions per 90", "Acciones ofensivas exitosas por 90 minutos", "Ataque"),
-        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
-        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque"),
-        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque"),
-        ("Third assists per 90", "Terceras asistencias por 90 minutos", "Ataque")
-    ],
-    'Mediocampista Defensivo': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate short / medium passes, %", "Pases cortos/medios precisos, %", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("Assists per 90", "Asistencias por 90 minutos", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful dribbles, %", "Regates exitosos, %", "Ataque"),
-        ("xG per 90", "xG por 90 minutos", "Ataque"),
-        ("Goals per 90", "Goles por 90 minutos", "Ataque"),
-        ("Offensive duels won, %", "Duelos ofensivos ganados, %", "Ataque")
-    ],
-    'Mediocampista Central': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate short / medium passes, %", "Pases cortos/medios precisos, %", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("Assists per 90", "Asistencias por 90 minutos", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful dribbles, %", "Regates exitosos, %", "Ataque"),
-        ("xG per 90", "xG por 90 minutos", "Ataque"),
-        ("Goals per 90", "Goles por 90 minutos", "Ataque"),
-        ("Offensive duels won, %", "Duelos ofensivos ganados, %", "Ataque")
-    ],
-    'Mediocampista Ofensivo': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate short / medium passes, %", "Pases cortos/medios precisos, %", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("Assists per 90", "Asistencias por 90 minutos", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful dribbles, %", "Regates exitosos, %", "Ataque"),
-        ("xG per 90", "xG por 90 minutos", "Ataque"),
-        ("Goals per 90", "Goles por 90 minutos", "Ataque"),
-        ("Offensive duels won, %", "Duelos ofensivos ganados, %", "Ataque")
-    ],
-    'Extremos': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Assists per 90", "Asistencias por 90 minutos", "Pases"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate crosses, %", "Centros precisos, %", "Pases"),
-        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
-        ("Goals per 90", "Goles por 90 minutos", "Ataque"),
-        ("xG per 90", "xG por 90 minutos", "Ataque"),
-        ("Successful dribbles, %", "Regates exitosos, %", "Ataque"),
-        ("Offensive duels won, %", "Duelos ofensivos ganados, %", "Ataque"),
-        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque")
-    ],
-    'Delantero': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Accurate passes, %", "Pases precisos, %", "Pases"),
-        ("Key passes per 90", "Pases clave por 90 minutos", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Assists per 90", "Asistencias por 90 minutos", "Pases"),
-        ("Goals per 90", "Goles por 90 minutos", "Ataque"),
-        ("Non-penalty goals per 90", "Goles sin penales por 90 minutos", "Ataque"),
-        ("Head goals per 90", "Goles de cabeza por 90 minutos", "Ataque"),
-        ("Goal conversion, %", "Conversión de goles, %", "Ataque"),
-        ("Shots per 90", "Disparos por 90 minutos", "Ataque"),
-        ("Shots on target, %", "Disparos a puerta, %", "Ataque"),
-        ("Touches in box per 90", "Toques en el área por 90 minutos", "Ataque"),
-        ("xG per 90", "xG por 90 minutos", "Ataque")
+# Intenta importar desde config.py, si no existe usamos variables locales
+try:
+    from config import (
+        METRICS_BY_POSITION,
+        BASE_URLS,
+        FILE_NAMES_FALLBACK,
+        COMMON_COLUMNS,
+        POSITION_PATTERNS,
+        CHART_COLORS,
+        CATEGORY_COLORS,
+        APP_CONFIG
+    )
+    CONFIG_AVAILABLE = True
+except ImportError:
+    CONFIG_AVAILABLE = False
+    # Fallback a las definiciones originales
+    # Aquí irían las definiciones originales si config.py no está disponible
+    METRICS_BY_POSITION = {
+        'Portero': [
+            ("Matches played", "Partidos jugados", "General"),
+            ("Minutes played", "Minutos jugados", "General"),
+            # ... resto de métricas de Portero
+        ],
+        # ... resto de posiciones
+    }
+    
+    BASE_URLS = {
+        "2020": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2020",
+        "20-21": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/20-21",
+        "2021": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2021",
+        "21-22": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/21-22",
+        "2022": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2022",
+        "22-23": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/22-23",
+        "2023": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2023",
+        "23-24": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/23-24",
+        "2024": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2024",
+        "24-25": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/24-25",
+        "2025": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2025"
+    }
+    
+    # Simplificado para el fallback
+    FILE_NAMES_FALLBACK = {
+        "2024": [
+            "Argentina Copa de la Liga 2024.parquet",
+            "Peruvian Liga 1 2024.parquet",
+        ],
+        # ... otras temporadas simplificadas
+    }
+    
+    # Columnas comunes
+    COMMON_COLUMNS = [
+        "Player", "Team within selected timeframe", "Passport country",
+        "Foot", "Age", "Minutes played", "Primary position", "Contract expires",
+        "Position", "Matches played"
     ]
-}
+    
+    # Patrones de posición
+    POSITION_PATTERNS = {
+        'Portero': 'GK', 'Defensa': 'CB',
+        'Lateral Izquierdo': 'LB|LWB', 'Lateral Derecho': 'RB|RWB',
+        'Mediocampista Defensivo': 'DMF', 'Mediocampista Central': 'CMF',
+        'Mediocampista Ofensivo': 'AMF', 'Extremos': 'RW|LW|LWF|RWF',
+        'Delantero': 'CF'
+    }
+    
+    # Colores para gráficos
+    CHART_COLORS = {
+        "primary": "#1A78CF",      # Azul principal
+        "secondary": "#FF9300",    # Naranja secundario
+        "tertiary": "#FF6347",     # Rojo terciario
+        "quaternary": "#32CD32",   # Verde cuaternario
+    }
+    
+    # Colores por categoría
+    CATEGORY_COLORS = {
+        "General": "#1A78CF",      # Azul
+        "Defensa": "#FF9300",      # Naranja
+        "Pases": "#FF6347",        # Rojo
+        "Ataque": "#32CD32"        # Verde
+    }
+    
+    # Configuración de la app
+    APP_CONFIG = {
+        "title": "Deportivo Garcilaso ⚽️",
+        "icon": "⚽🐈‍⬛🇵🇪📊",
+        "layout": "wide",
+        "version": "2.0.0",
+        "author": "Deportivo Garcilaso",
+        "last_update": "Marzo 2025",
+        "auto_detect_leagues": True
+    }
+
+# Intenta importar el detector de ligas
+try:
+    from utils.league_detector import get_available_leagues
+    LEAGUE_DETECTOR_AVAILABLE = True
+except ImportError:
+    LEAGUE_DETECTOR_AVAILABLE = False
+
+# Intenta importar funciones de optimización
+try:
+    from utils.data_loader import load_parquet_data, optimize_dataframe
+    DATA_LOADER_AVAILABLE = True
+except ImportError:
+    DATA_LOADER_AVAILABLE = False
+    
+    # Implementación local si no está disponible el módulo
+    @st.cache_data(ttl=3600)
+    def load_parquet_data(file_url, season=None, competition=None, columns=None):
+        """
+        Carga un archivo Parquet desde una URL con mejoras.
+        """
+        try:
+            response = requests.get(file_url, timeout=30)
+            if response.status_code == 200:
+                file_bytes = BytesIO(response.content)
+                
+                # Intentar cargar con columnas específicas o todas
+                try:
+                    if columns:
+                        data = pd.read_parquet(file_bytes, columns=columns)
+                    else:
+                        data = pd.read_parquet(file_bytes)
+                except Exception as e:
+                    if columns:  # Solo mostrar advertencia si se intentó cargar columnas específicas
+                        st.warning(f"Error al cargar columnas específicas. Cargando todas: {e}")
+                    file_bytes.seek(0)  # Resetear el buffer
+                    data = pd.read_parquet(file_bytes)
+                
+                # Agregar columnas adicionales
+                if season is not None:
+                    data["Season"] = season
+                if competition is not None:
+                    data["Competition"] = competition
+                    
+                return data
+            else:
+                st.error(f"Error al descargar {file_url}: {response.status_code}")
+                return None
+        except Exception as e:
+            st.error(f"Error al procesar {file_url}: {e}")
+            return None
+
+    def optimize_dataframe(df):
+        """
+        Optimiza los tipos de datos de un DataFrame para reducir memoria.
+        """
+        # Convertir columnas categóricas
+        for col in df.select_dtypes(include=['object']).columns:
+            if df[col].nunique() < df.shape[0] * 0.5:  # Si menos del 50% son valores únicos
+                df[col] = df[col].astype('category')
+        
+        # Optimizar floats
+        for col in df.select_dtypes(include=['float64']).columns:
+            df[col] = df[col].astype('float32')
+            
+        return df
+
+# Implementación local del detector de ligas si no está disponible
+if not LEAGUE_DETECTOR_AVAILABLE:
+    @st.cache_data(ttl=3600*6)  # Cache por 6 horas
+    def detect_leagues_for_season(base_url, season):
+        """
+        Detecta automáticamente las ligas disponibles para una temporada específica.
+        """
+        # Lista de patrones comunes para probar
+        common_leagues = [
+            "Argentina Copa de la Liga",
+            "Argentina Primera Nacional",
+            "Argentina LPF",
+            "Bolivian LFPB",
+            "Brasileirao",
+            "Brazil Serie B",
+            "Brazil Serie C",
+            "Canadian Premier League",
+            "Chilean Primera B",
+            "Chilean Primera Division",
+            "Colombian Primera A",
+            "Colombian Torneo BetPlay",
+            "Ecuador Liga Pro",
+            "J1",
+            "K League 1",
+            "MLS",
+            "MLS Next Pro",
+            "Panama LPF",
+            "Paraguay Division Profesional",
+            "Peruvian Liga 1",
+            "USL Championship",
+            "USL League 1",
+            "Uruguay Primera Division",
+            "Premier League",
+            "La Liga",
+            "Bundesliga",
+            "Serie A",
+            "Ligue 1"
+        ]
+        
+        # Para temporadas tipo 20-21, tenemos más ligas
+        if "-" in season:
+            additional_leagues = [
+                "Belgian Pro League",
+                "Championship",
+                "Costa Rican Primera Division",
+                "El Salvador Primera Division",
+                "English National League",
+                "Eredivisie",
+                "French National 1",
+                "Greek Super League",
+                "Guatemalan Liga Nacional",
+                "Honduran Liga Nacional",
+                "La Liga 2",
+                "League One",
+                "League Two",
+                "Liga MX",
+                "Liga de Expansion MX",
+                "Ligue 2",
+                "Nicaragua Primera Division",
+                "Portuguese Segunda Liga",
+                "Primavera 1",
+                "Primeira Liga",
+                "Russian First League",
+                "Russian Premier League",
+                "Saudi Pro League",
+                "Scottish Championship",
+                "Serie B",
+                "Serie C",
+                "Super Lig",
+                "Superliga",
+                "Swiss Challenge League",
+                "Swiss Super League",
+                "UAE Pro League"
+            ]
+            common_leagues.extend(additional_leagues)
+        
+        # Función para verificar si existe un archivo
+        def check_file(league_name):
+            # Construir nombre de archivo
+            file_name = f"{league_name} {season}.parquet"
+            url = f"{base_url}/{file_name}"
+            
+            try:
+                # Usar 'head' para verificar existencia sin descargar el archivo completo
+                response = requests.head(url, timeout=2)
+                
+                if response.status_code == 200:
+                    return file_name
+                return None
+            except:
+                return None
+        
+        # Verificar archivos en paralelo para mayor velocidad
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(check_file, common_leagues))
+        
+        # Filtrar resultados None
+        available_files = [f for f in results if f is not None]
+        
+        return sorted(available_files)
+
+    @st.cache_data(ttl=3600*24)  # Cache por 24 horas
+    def get_available_leagues():
+        """
+        Obtiene todas las ligas disponibles para todas las temporadas definidas.
+        """
+        # Usamos el fallback como base
+        detected_file_names = FILE_NAMES_FALLBACK.copy()
+        
+        # Crear barra de progreso para la UI
+        progress_placeholder = st.empty()
+        progress_bar = None
+        total_seasons = len(BASE_URLS)
+        
+        try:
+            # Mostrar progreso solo si estamos en una sesión de Streamlit
+            progress_placeholder.text("Detectando ligas disponibles...")
+            progress_bar = st.progress(0)
+        except:
+            pass
+        
+        # Detectar ligas para cada temporada
+        for i, (season, base_url) in enumerate(BASE_URLS.items()):
+            # Actualizar progreso
+            if progress_bar:
+                progress_bar.progress((i) / total_seasons)
+            
+            # Detectar ligas
+            detected_leagues = detect_leagues_for_season(base_url, season)
+            
+            # Si encontramos algo, actualizar el diccionario
+            if detected_leagues:
+                detected_file_names[season] = detected_leagues
+            
+            # Actualizar progreso
+            if progress_bar:
+                progress_bar.progress((i + 1) / total_seasons)
+        
+        # Limpiar UI
+        if progress_placeholder:
+            progress_placeholder.empty()
+        if progress_bar:
+            progress_bar.empty()
+        
+        return detected_file_names
+
+# Función para obtener la lista de archivos (ligas)
+def get_file_names():
+    """
+    Obtiene la lista de archivos disponibles, ya sea de forma dinámica o estática.
+    """
+    # Si ya tenemos los nombres de archivos en la sesión, usarlos
+    if "file_names" in st.session_state and st.session_state.file_names is not None:
+        return st.session_state.file_names
+
+    # Si la detección automática está habilitada
+    if APP_CONFIG.get("auto_detect_leagues", True):
+        try:
+            # Mostrar un mensaje mientras se detectan las ligas
+            with st.spinner("Detectando ligas disponibles..."):
+                file_names = get_available_leagues()
+                st.session_state.file_names = file_names
+                return file_names
+        except Exception as e:
+            st.warning(f"No se pudieron detectar las ligas automáticamente: {e}")
+            # Usar fallback en caso de error
+            st.session_state.file_names = FILE_NAMES_FALLBACK
+            return FILE_NAMES_FALLBACK
+    else:
+        # Usar la lista estática
+        st.session_state.file_names = FILE_NAMES_FALLBACK
+        return FILE_NAMES_FALLBACK
 
 # Configuración básica de la página
 st.set_page_config(
-    page_title="Deportivo Garcilaso ⚽️",
-    layout="wide",
-    page_icon="⚽🐈‍⬛🇵🇪📊",
+    page_title=APP_CONFIG.get("title", "Deportivo Garcilaso ⚽️"),
+    layout=APP_CONFIG.get("layout", "wide"),
+    page_icon=APP_CONFIG.get("icon", "⚽🐈‍⬛🇵🇪📊"),
     initial_sidebar_state="expanded"
 )
 
-# URLs base y archivos por temporada
-BASE_URLS = {
-    "2020": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2020",
-    "20-21": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/20-21",
-    "2021": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2021",
-    "21-22": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/21-22",
-    "2022": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2022",
-    "22-23": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/22-23",
-    "2023": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2023",
-    "23-24": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/23-24",
-    "2024": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2024",
-    "24-25": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/24-25",
-    "2025": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2025"
-}
+# Inicialización de estado de sesión para tracking de navegación y datos
+if "initialized" not in st.session_state:
+    st.session_state.initialized = True
+    st.session_state.data_loaded = False
+    st.session_state.filtered_data = None
+    st.session_state.file_names = None
 
-FILE_NAMES = {
-    "2025": [
-        "Argentina Liga Profesional de Futbol 2025.parquet",
-    ],
-    "2024": [
-        "Argentina Copa de la Liga 2024.parquet",
-        "Argentina Primera Nacional 2024.parquet",
-        "Bolivian LFPB 2024.parquet",
-        "Brasileirao 2024.parquet",
-        "Brazil Serie B 2024.parquet",
-        "Brazil Serie C 2024.parquet",
-        "Canadian Premier League 2024.parquet",
-        "Chilean Primera B 2024.parquet",
-        "Chilean Primera Division 2024.parquet",
-        "Colombian Primera A 2024.parquet",
-        "Colombian Torneo BetPlay 2024.parquet",
-        "Ecuador Liga Pro 2024.parquet",
-        "J1 2024.parquet",
-        "K League 1 2024.parquet",
-        "MLS 2024.parquet",
-        "MLS Next Pro 2024.parquet",
-        "Panama LPF 2024.parquet",
-        "Paraguay Division Profesional 2024.parquet",
-        "Peruvian Liga 1 2024.parquet",
-        "USL Championship 2024.parquet",
-        "USL League 1 2024.parquet",
-        "Uruguay Primera Division 2024.parquet",
-    ],
-    "2023": [
-        "Argentina LPF 2023.parquet",
-        "Argentina Primera Nacional 2023.parquet",
-        "Argentina Reserve League 2023.parquet",
-        "Bolivian LFPB 2023.parquet",
-        "Brasileirao 2023.parquet",
-        "Brazil Serie B 2023.parquet",
-        "Brazil Serie C 2023.parquet",
-        "Canadian Premier League 2023.parquet",
-        "Chilean Primera B 2023.parquet",
-        "Chilean Primera Division 2023.parquet",
-        "Colombian Primera A 2023.parquet",
-        "Colombian Torneo BetPlay 2023.parquet",
-        "Ecuador Liga Pro 2023.parquet",
-        "J1 2023.parquet",
-        "K League 1 2023.parquet",
-        "MLS 2023.parquet",
-        "MLS Next Pro 2023.parquet",
-        "Panama LPF 2023.parquet",
-        "Paraguay Division Profesional 2023.parquet",
-        "Peruvian Liga 1 2023.parquet",
-        "USL Championship 2023.parquet",
-        "USL League 1 2023.parquet",
-        "Uruguay Primera Division 2023.parquet",
-    ],
-    "2022": [
-        "Bolivian LFPB 2022.parquet",
-        "Brasileirao 2022.parquet",
-        "Brazil Serie B 2022.parquet",
-        "Brazil Serie C 2022.parquet",
-        "Canadian Premier League 2022.parquet",
-        "Chilean Primera B 2022.parquet",
-        "Chilean Primera Division 2022.parquet",
-        "Colombian Primera A 2022.parquet",
-        "Colombian Torneo BetPlay 2022.parquet",
-        "Ecuador Liga Pro 2022.parquet",
-        "J1 2022.parquet",
-        "K League 1 2022.parquet",
-        "MLS 2022.parquet",
-        "Panama LPF 2022.parquet",
-        "Paraguay Division Profesional 2022.parquet",
-        "Peruvian Liga 1 2022.parquet",
-        "USL Championship 2022.parquet",
-        "USL League 1 2022.parquet",
-        "Uruguay Primera Division 2022.parquet",
-    ],
-    "2021": [
-        "Bolivian LFPB 2021.parquet",
-        "Brasileirao 2021.parquet",
-        "Brazil Serie B 2021.parquet",
-        "Brazil Serie C 2021.parquet",
-        "Chilean Primera B 2021.parquet",
-        "Chilean Primera Division 2021.parquet",
-        "Colombian Primera A 2021.parquet",
-        "Colombian Torneo BetPlay 2021.parquet",
-        "Ecuador Liga Pro 2021.parquet",
-        "J1 2021.parquet",
-        "K League 1 2021.parquet",
-        "MLS 2021.parquet",
-        "Panama LPF 2021.parquet",
-        "Paraguay Division Profesional 2021.parquet",
-        "Peruvian Liga 1 2021.parquet",
-        "USL Championship 2021.parquet",
-        "Uruguay Primera Division 2021.parquet",
-    ],
-    "2020": [
-        "Bolivian LFPB 2020.parquet",
-        "Brasileirao 2020.parquet",
-        "Brazil Serie B 2020.parquet",
-        "Brazil Serie C 2020.parquet",
-        "Canadian Premier League 2020.parquet",
-        "Chilean Primera B 2020.parquet",
-        "Chilean Primera Division 2020.parquet",
-        "Colombian Primera A 2020.parquet",
-        "Colombian Torneo BetPlay 2020.parquet",
-        "Ecuador Liga Pro 2020.parquet",
-        "J1 2020.parquet",
-        "K League 1 2020.parquet",
-        "MLS 2020.parquet",
-        "Panama LPF 2020.parquet",
-        "Paraguay Division Profesional 2020.parquet",
-        "Peruvian Liga 1 2020.parquet",
-        "USL Championship 2020.parquet",
-        "Uruguay Primera Division 2020.parquet",
-    ],
-    "20-21": [
-        "Belgian Pro League 20-21.parquet",
-        "Bundesliga 20-21.parquet",
-        "Campeonato de Portugal 20-21.parquet",
-        "Championship 20-21.parquet",
-        "Costa Rican Primera Division 20-21.parquet",
-        "El Salvador Primera Division 20-21.parquet",
-        "English National League 20-21.parquet",
-        "Eredivisie 20-21.parquet",
-        "French National 1 20-21.parquet",
-        "Greek Super League 20-21.parquet",
-        "Guatemalan Liga Nacional 20-21.parquet",
-        "Honduran Liga Nacional 20-21.parquet",
-        "La Liga 2 20-21.parquet",
-        "La Liga 20-21.parquet",
-        "League One 20-21.parquet",
-        "League Two 20-21.parquet",
-        "Liga MX 20-21.parquet",
-        "Liga de Expansion MX 20-21.parquet",
-        "Ligue 1 20-21.parquet",
-        "Ligue 2 20-21.parquet",
-        "Nicaragua Primera Division 20-21.parquet",
-        "Portuguese Segunda Liga 20-21.parquet",
-        "Premier League 20-21.parquet",
-        "Primavera 1 20-21.parquet",
-        "Primeira Liga 20-21.parquet",
-        "Russian First League 20-21.parquet",
-        "Russian Premier League 20-21.parquet",
-        "Saudi Pro League 20-21.parquet",
-        "Scottish Championship 20-21.parquet",
-        "Serie A 20-21.parquet",
-        "Serie B 20-21.parquet",
-        "Serie C 20-21.parquet",
-        "Super Lig 20-21.parquet",
-        "Superliga 20-21.parquet",
-        "Swiss Challenge League 20-21.parquet",
-        "Swiss Super League 20-21.parquet",
-        "UAE Pro League 20-21.parquet",
-    ],
-    "21-22": [
-        "Belgian Pro League 21-22.parquet",
-        "Bundesliga 21-22.parquet",
-        "Campeonato de Portugal 21-22.parquet",
-        "Championship 21-22.parquet",
-        "Costa Rican Primera Division 21-22.parquet",
-        "El Salvador Primera Division 21-22.parquet",
-        "English National League 21-22.parquet",
-        "Eredivisie 21-22.parquet",
-        "French National 1 21-22.parquet",
-        "Greek Super League 21-22.parquet",
-        "Guatemalan Liga Nacional 21-22.parquet",
-        "Honduran Liga Nacional 21-22.parquet",
-        "La Liga 2 21-22.parquet",
-        "La Liga 21-22.parquet",
-        "League One 21-22.parquet",
-        "League Two 21-22.parquet",
-        "Liga MX 21-22.parquet",
-        "Liga de Expansion MX 21-22.parquet",
-        "Ligue 1 21-22.parquet",
-        "Ligue 2 21-22.parquet",
-        "Nicaragua Primera Division 21-22.parquet",
-        "Portuguese Segunda Liga 21-22.parquet",
-        "Premier League 21-22.parquet",
-        "Primavera 1 21-22.parquet",
-        "Primeira Liga 21-22.parquet",
-        "Russian First League 21-22.parquet",
-        "Russian Premier League 21-22.parquet",
-        "Saudi Pro League 21-22.parquet",
-        "Scottish Championship 21-22.parquet",
-        "Serie A 21-22.parquet",
-        "Serie B 21-22.parquet",
-        "Serie C 21-22.parquet",
-        "Super Lig 21-22.parquet",
-        "Superliga 21-22.parquet",
-        "Swiss Challenge League 21-22.parquet",
-        "Swiss Super League 21-22.parquet",
-        "UAE Pro League 21-22.parquet",
-    ],
-    "22-23": [
-        "Belgian Pro League 22-23.parquet",
-        "Bundesliga 22-23.parquet",
-        "Campeonato de Portugal 22-23.parquet",
-        "Championship 22-23.parquet",
-        "Costa Rican Primera Division 22-23.parquet",
-        "El Salvador Primera Division 22-23.parquet",
-        "English National League 22-23.parquet",
-        "Eredivisie 22-23.parquet",
-        "French National 1 22-23.parquet",
-        "Greek Super League 22-23.parquet",
-        "Guatemalan Liga Nacional 22-23.parquet",
-        "Honduran Liga Nacional 22-23.parquet",
-        "La Liga 2 22-23.parquet",
-        "La Liga 22-23.parquet",
-        "League One 22-23.parquet",
-        "League Two 22-23.parquet",
-        "Liga MX 22-23.parquet",
-        "Liga de Expansion MX 22-23.parquet",
-        "Ligue 1 22-23.parquet",
-        "Ligue 2 22-23.parquet",
-        "Nicaragua Primera Division 22-23.parquet",
-        "Portuguese Segunda Liga 22-23.parquet",
-        "Premier League 22-23.parquet",
-        "Primavera 1 22-23.parquet",
-        "Primeira Liga 22-23.parquet",
-        "Russian First League 22-23.parquet",
-        "Russian Premier League 22-23.parquet",
-        "Saudi Pro League 22-23.parquet",
-        "Scottish Championship 22-23.parquet",
-        "Serie A 22-23.parquet",
-        "Serie B 22-23.parquet",
-        "Serie C 22-23.parquet",
-        "Super Lig 22-23.parquet",
-        "Superliga 22-23.parquet",
-        "Swiss Challenge League 22-23.parquet",
-        "Swiss Super League 22-23.parquet",
-        "UAE Pro League 22-23.parquet",
-    ],
-    "23-24": [
-        "Belgian Pro League 23-24.parquet",
-        "Bundesliga 23-24.parquet",
-        "Campeonato de Portugal 23-24.parquet",
-        "Championship 23-24.parquet",
-        "Costa Rican Primera Division 23-24.parquet",
-        "El Salvador Primera Division 23-24.parquet",
-        "English National League 23-24.parquet",
-        "Eredivisie 23-24.parquet",
-        "French National 1 23-24.parquet",
-        "Greek Super League 23-24.parquet",
-        "Guatemalan Liga Nacional 23-24.parquet",
-        "Honduran Liga Nacional 23-24.parquet",
-        "La Liga 2 23-24.parquet",
-        "La Liga 23-24.parquet",
-        "League One 23-24.parquet",
-        "League Two 23-24.parquet",
-        "Liga MX 23-24.parquet",
-        "Liga de Expansion MX 23-24.parquet",
-        "Ligue 1 23-24.parquet",
-        "Ligue 2 23-24.parquet",
-        "Nicaragua Primera Division 23-24.parquet",
-        "Portuguese Segunda Liga 23-24.parquet",
-        "Premier League 23-24.parquet",
-        "Primavera 1 23-24.parquet",
-        "Primeira Liga 23-24.parquet",
-        "Russian First League 23-24.parquet",
-        "Russian Premier League 23-24.parquet",
-        "Saudi Pro League 23-24.parquet",
-        "Scottish Championship 23-24.parquet",
-        "Serie A 23-24.parquet",
-        "Serie B 23-24.parquet",
-        "Serie C 23-24.parquet",
-        "Super Lig 23-24.parquet",
-        "Superliga 23-24.parquet",
-        "Swiss Challenge League 23-24.parquet",
-        "Swiss Super League 23-24.parquet",
-        "UAE Pro League 23-24.parquet",
-    ],
-    "24-25": [
-        "Belgian Pro League 24-25.parquet",
-        "Bundesliga 24-25.parquet",
-        "Championship 24-25.parquet",
-        "Costa Rican Primera Division 24-25.parquet",
-        "El Salvador Primera Division 24-25.parquet",
-        "English National League 24-25.parquet",
-        "Eredivisie 24-25.parquet",
-        "French National 1 24-25.parquet",
-        "Greek Super League 24-25.parquet",
-        "Guatemalan Liga Nacional 24-25.parquet",
-        "Honduran Liga Nacional 24-25.parquet",
-        "La Liga 2 24-25.parquet",
-        "La Liga 24-25.parquet",
-        "League One 24-25.parquet",
-        "League Two 24-25.parquet",
-        "Liga MX 24-25.parquet",
-        "Liga de Expansion MX 24-25.parquet",
-        "Ligue 1 24-25.parquet",
-        "Ligue 2 24-25.parquet",
-        "Nicaragua Primera Division 24-25.parquet",
-        "Portuguese Segunda Liga 24-25.parquet",
-        "Premier League 24-25.parquet",
-        "Primavera 1 24-25.parquet",
-        "Primeira Liga 24-25.parquet",
-        "Russian Premier League 24-25.parquet",
-        "Saudi Pro League 24-25.parquet",
-        "Scottish Championship 24-25.parquet",
-        "Serie A 24-25.parquet",
-        "Serie B 24-25.parquet",
-        "Serie C 24-25.parquet",
-        "Super Lig 24-25.parquet",
-        "Superliga 24-25.parquet",
-        "Swiss Challenge League 24-25.parquet",
-        "Swiss Super League 24-25.parquet",
-        "UAE Pro League 24-25.parquet",
-    ],    
-}
-
-# Columnas necesarias para la aplicación
-COLUMNS_TO_LOAD = [
-    "Player",
-    "Team within selected timeframe",
-    "Passport country",
-    "Foot",
-    "Age",
-    "Minutes played",
-    "Primary position",
-    "Contract expires",
-]
-
-@st.cache_data
-def load_parquet_data(file_url, season, competition):
-    """
-    Carga un archivo Parquet desde una URL y añade columnas de temporada y competición.
-    """
-    try:
-        response = requests.get(file_url)
-        if response.status_code == 200:
-            file_bytes = BytesIO(response.content)
-            data = pd.read_parquet(file_bytes)  # Cargar todas las columnas
-            # Agregar columnas adicionales
-            data["Season"] = season
-            data["Competition"] = competition
-            return data
-        else:
-            st.error(f"Error al descargar {file_url}: {response.status_code}")
-            return None
-    except Exception as e:
-        st.error(f"Error al procesar {file_url}: {e}")
-        return None
-
-# Función para cargar múltiples archivos en paralelo
-@st.cache_data
-def load_files_in_parallel(file_urls, columns=None):
-    """
-    Carga múltiples archivos Parquet en paralelo.
-    """
-    with ThreadPoolExecutor() as executor:
-        results = list(executor.map(lambda url: load_parquet_data(url, columns), file_urls))
-    return [df for df in results if df is not None]
-
-################################################### PAGINA CENTRAL ###############################################
-
+# Función principal para cargar datos
 def main_page():
-    st.title("Deportivo Garcilaso ⚽️")
+    st.title(APP_CONFIG.get("title", "Deportivo Garcilaso ⚽️"))
     st.write("Análisis de datos Propio | Rival | Scouting.")
 
-    # Selección de temporadas
-    available_seasons = list(BASE_URLS.keys())
-    selected_seasons = st.multiselect(
-        "Selecciona temporadas:", available_seasons, default=available_seasons, key="season_selector"
-    )
+    # Obtener nombres de archivos (ligas) disponibles
+    file_names = get_file_names()
 
+    # Crear columnas para los filtros
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Selección de temporadas
+        available_seasons = list(BASE_URLS.keys())
+        select_all_seasons = st.checkbox("Seleccionar todas las temporadas", value=True)
+        
+        if select_all_seasons:
+            selected_seasons = available_seasons
+        else:
+            selected_seasons = st.multiselect(
+                "Selecciona temporadas:", 
+                available_seasons, 
+                default=[]
+            )
+    
     # Filtrar archivos por temporada seleccionada
-    all_files = [
-        (season, f"{BASE_URLS[season]}/{file}".replace(" ", "%20"), file.split(".")[0])
-        for season in selected_seasons
-        for file in FILE_NAMES[season]
-    ]
-    selected_files = st.multiselect(
-        "Selecciona ligas:",
-        ["Todas"] + [f"{season} - {file}" for season, _, file in all_files],
-        default="Todas",
-        key="league_selector",
-    )
+    all_files = []
+    for season in selected_seasons:
+        if season in file_names:  # Verificar que la temporada existe en file_names
+            for file in file_names[season]:
+                all_files.append((
+                    season, 
+                    f"{BASE_URLS[season]}/{file}".replace(" ", "%20"), 
+                    file.split(".")[0]
+                ))
+    
+    with col2:
+        # Opción para mostrar/seleccionar todas las ligas
+        select_all_leagues = st.checkbox("Seleccionar todas las ligas", value=True)
+        
+        # Contador para mostrar número de ligas disponibles
+        st.write(f"Ligas disponibles: {len(all_files)}")
+        
+        if select_all_leagues:
+            selected_files = all_files
+        else:
+            # Agrupar por temporada para mejor organización
+            leagues_by_season = {}
+            for season, _, file in all_files:
+                if season not in leagues_by_season:
+                    leagues_by_season[season] = []
+                leagues_by_season[season].append(f"{season} - {file}")
+            
+            # Crear un expander por temporada
+            selected_leagues = []
+            for season, leagues in sorted(leagues_by_season.items()):
+                with st.expander(f"Ligas {season}"):
+                    for league in sorted(leagues):
+                        if st.checkbox(league, key=f"league_{league}"):
+                            selected_leagues.append(league)
+            
+            # Convertir selecciones a formato compatible
+            selected_files = [
+                (season, file_url, competition)
+                for season, file_url, competition in all_files
+                if f"{season} - {competition}" in selected_leagues
+            ]
 
-    if "Todas" in selected_files:
-        files_to_load = all_files
-    else:
-        files_to_load = [
-            (season, file_url, competition)
-            for season, file_url, competition in all_files
-            if f"{season} - {competition}" in selected_files
-        ]
+    # Opciones avanzadas de carga
+    with st.expander("Opciones avanzadas de carga"):
+        load_columns = st.checkbox("Cargar solo columnas esenciales (más rápido)", value=True)
+        columns_to_load = None
+        if load_columns:
+            columns_to_load = COMMON_COLUMNS.copy()
+            # Opción para añadir métricas específicas
+            st.write("Selecciona métricas adicionales a cargar:")
+            
+            # Agrupar métricas por categoría
+            metrics_by_category = {}
+            for position_metrics in METRICS_BY_POSITION.values():
+                for metric in position_metrics:
+                    category = metric[2]  # General, Defensa, Pases, Ataque
+                    if category not in metrics_by_category:
+                        metrics_by_category[category] = set()
+                    metrics_by_category[category].add((metric[0], metric[1]))  # (nombre_inglés, nombre_español)
+            
+            # Mostrar métricas por categoría en columnas
+            cols = st.columns(len(metrics_by_category))
+            additional_metrics = []
+            
+            for i, (category, metrics) in enumerate(metrics_by_category.items()):
+                with cols[i]:
+                    st.write(f"**{category}**")
+                    for metric_en, metric_es in sorted(metrics):
+                        if st.checkbox(metric_es, key=f"metric_{metric_en}"):
+                            additional_metrics.append(metric_en)
+            
+            if additional_metrics:
+                columns_to_load.extend(additional_metrics)
+
+        # Opción para forzar detección de ligas
+        if st.button("Refrescar lista de ligas disponibles"):
+            with st.spinner("Detectando ligas..."):
+                file_names = get_available_leagues()
+                st.session_state.file_names = file_names
+                st.experimental_rerun()
 
     # Botón para cargar datos
     if st.button("Cargar Datos", key="load_data_button"):
-        # Barra de progreso
-        progress_bar = st.progress(0)
-        progress_step = 1 / len(files_to_load) if len(files_to_load) > 0 else 1
+        # Verificar si hay archivos seleccionados
+        if not selected_files:
+            st.warning("No se han seleccionado archivos para cargar.")
+            return
+            
+        # Crear una columna para el progreso
+        progress_container = st.empty()
+        with progress_container.container():
+            progress_text = st.empty()
+            progress_bar = st.progress(0)
+            
+            progress_text.text(f"Iniciando carga de {len(selected_files)} archivos...")
+            
+            # Cargar archivos con mejor manejo de progreso
+            total_files = len(selected_files)
+            dataframes = []
+            
+            for i, (season, file_url, competition) in enumerate(selected_files):
+                # Actualizar texto de progreso
+                progress_text.text(f"Cargando archivo {i+1}/{total_files}: {competition}")
+                progress_bar.progress((i / total_files))
+                
+                # Cargar archivo
+                df = load_parquet_data(
+                    file_url, 
+                    season=season, 
+                    competition=competition,
+                    columns=columns_to_load
+                )
+                
+                if df is not None:
+                    # Optimizar el DataFrame inmediatamente
+                    df = optimize_dataframe(df)
+                    dataframes.append(df)
+            
+            # Concatenar datos
+            if dataframes:
+                progress_text.text("Procesando datos...")
+                progress_bar.progress(0.95)  # Casi completo
+                
+                # Concatenar en lotes si hay muchos dataframes
+                if len(dataframes) > 10:
+                    batch_size = 5
+                    combined_data = []
+                    for i in range(0, len(dataframes), batch_size):
+                        batch = dataframes[i:i+batch_size]
+                        combined_data.append(pd.concat(batch, ignore_index=True))
+                    full_data = pd.concat(combined_data, ignore_index=True)
+                else:
+                    full_data = pd.concat(dataframes, ignore_index=True)
+                
+                # Optimizar dataframe final
+                full_data = optimize_dataframe(full_data)
+                
+                # Guardar en el estado de sesión
+                st.session_state["filtered_data"] = full_data
+                st.session_state["data_loaded"] = True
+                
+                # Limpiar y mostrar éxito
+                progress_container.empty()
+                st.success(f"Se cargaron {len(dataframes)} archivos correctamente. "
+                          f"Total de registros: {len(full_data):,}")
+                
+                # Mostrar muestra de datos
+                with st.expander("Vista previa de datos"):
+                    st.dataframe(full_data.head(10), use_container_width=True)
+                    
+                    # Información útil sobre el conjunto de datos
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Total de jugadores", f"{full_data['Player'].nunique():,}")
+                    with col2:
+                        st.metric("Total de equipos", f"{full_data['Team within selected timeframe'].nunique():,}")
+                    with col3:
+                        st.metric("Temporadas", f"{full_data['Season'].nunique()}")
+            else:
+                progress_container.empty()
+                st.warning("No se pudo cargar ningún archivo. Verifica la conexión o los filtros seleccionados.")
 
-        # Cargar archivos
-        dataframes = []
-        for i, (season, file_url, competition) in enumerate(files_to_load):
-            df = load_parquet_data(file_url, season=season, competition=competition)  # Sin `columns`
-            if df is not None:
-                dataframes.append(df)
-            progress_bar.progress((i + 1) * progress_step)
-
-        # Concatenar datos
-        if dataframes:
-            full_data = pd.concat(dataframes, ignore_index=True)
-            st.session_state["filtered_data"] = full_data
-            st.success(f"Se cargaron {len(dataframes)} archivos correctamente.")
-            st.dataframe(full_data.head(), use_container_width=True)
-        else:
-            st.warning("No se pudo cargar ningún archivo. Verifica la conexión o los filtros seleccionados.")
-
-
-################################################## BUSCAR ##################################################
-############################################################################################################
-
-import streamlit as st
-
+# [Aquí van todas las funciones de páginas originales]
 def search_page():
     st.title("BUSCAR JUGADORES EN TODO EL MUNDO ⚽️")
 
@@ -738,9 +657,6 @@ def search_page():
     else:
         st.warning("Primero debes cargar los datos en la pestaña principal.")
 
-
-###################################### COMPARACIÓN ##########################################
-
 def comparison_page():
     st.write("COMPARACIÓN DE JUGADORES ENTRE VARIAS TEMPORADAS ⚽️")
 
@@ -775,11 +691,11 @@ def comparison_page():
     # Filtro por posición para elegir métricas específicas
     selected_position = st.selectbox(
         "Selecciona la posición de los jugadores:",
-        options=list(metrics_by_position.keys())
+        options=list(METRICS_BY_POSITION.keys())
     )
 
     # Filtrar las métricas específicas para la posición seleccionada
-    metrics = metrics_by_position[selected_position]
+    metrics = METRICS_BY_POSITION[selected_position]
     available_metrics = [metric[0] for metric in metrics if metric[0] in players_to_compare.columns]
     metric_labels = {metric[0]: metric[1] for metric in metrics if metric[0] in players_to_compare.columns}
 
@@ -822,11 +738,6 @@ def comparison_page():
     st.write("### Comparación de métricas:")
     st.dataframe(styled_comparison_data, use_container_width=True)
 
-
-###################################### SIMILITUD ##########################################
-###########################################################################################
-
-
 def similarity_page():
     st.write("SIMILITUD DE JUGADORES (COSENO | EUCLIDIANA) ⚽️")
 
@@ -845,7 +756,7 @@ def similarity_page():
         # Filtro de posición
         selected_position = st.sidebar.selectbox(
             "Posición:",
-            options=["Todos"] + list(metrics_by_position.keys())
+            options=["Todos"] + list(METRICS_BY_POSITION.keys())
         )
 
         # Filtro de temporadas
@@ -892,15 +803,9 @@ def similarity_page():
 
         # Filtro por posición
         if selected_position != "Todos":
-            position_patterns = {
-                "Portero": "GK", "Defensa": "CB",
-                "Lateral Izquierdo": "LB|LWB", "Lateral Derecho": "RB|RWB",
-                "Mediocampista Defensivo": "DMF", "Mediocampista Central": "CMF",
-                "Mediocampista Ofensivo": "AMF", "Extremos": "RW|LW|LWF|RWF",
-                "Delantero": "CF"
-            }
-            pattern = position_patterns[selected_position]
-            filtered_data = filtered_data[filtered_data["Primary position"].str.contains(pattern, na=False)]
+            position_pattern = POSITION_PATTERNS.get(selected_position, "")
+            if position_pattern:
+                filtered_data = filtered_data[filtered_data["Primary position"].str.contains(position_pattern, na=False)]
 
         # Filtro por país de pasaporte
         if passport_country.strip():
@@ -941,9 +846,9 @@ def similarity_page():
 
         # Métricas por posición
         if selected_position != "Todos":
-            metrics = metrics_by_position[selected_position]
+            metrics = METRICS_BY_POSITION[selected_position]
         else:
-            metrics = [metric for position_metrics in metrics_by_position.values() for metric in position_metrics]
+            metrics = [metric for position_metrics in METRICS_BY_POSITION.values() for metric in position_metrics]
 
         # Filtrar las métricas existentes
         available_metrics = [metric[0] for metric in metrics if metric[0] in filtered_data.columns]
@@ -1004,10 +909,6 @@ def similarity_page():
     else:
         st.warning("Primero debes cargar los datos en la pestaña principal.")
 
-
-###################################### DENSIDAD ###########################################
-###########################################################################################
-
 def density_page():
     st.write("DENSIDAD DE JUGADORES EN BASE A MÉTRICAS ⚽️")
 
@@ -1049,10 +950,10 @@ def density_page():
         jugador_comparacion = st.sidebar.selectbox("Selecciona el jugador para comparar:", available_players, index=0)
 
         # Filtro de posición general
-        posicion_general = st.sidebar.selectbox("Selecciona la posición general de los jugadores:", list(metrics_by_position.keys()))
+        posicion_general = st.sidebar.selectbox("Selecciona la posición general de los jugadores:", list(METRICS_BY_POSITION.keys()))
 
         # Obtener métricas basadas en la posición seleccionada
-        metricas = metrics_by_position[posicion_general]
+        metricas = METRICS_BY_POSITION[posicion_general]
         metric_names_english = [metric[0] for metric in metricas]
         metric_names_spanish = [metric[1] for metric in metricas]
 
@@ -1117,9 +1018,6 @@ def generar_grafico_densidad(df, metric_english, metric_spanish, jugador_objetiv
     plt.tight_layout()
     return fig
 
-###################################### DISPERSIÓN ###########################################
-#############################################################################################
-
 def create_scatter_plot():
     if 'filtered_data' not in st.session_state:
         return
@@ -1148,9 +1046,7 @@ def create_scatter_plot():
         filtered_df = filtered_df[filtered_df['Team within selected timeframe'].isin(selected_teams)]
 
     with st.sidebar:
-        positions = ['Portero', 'Defensa', 'Lateral Izquierdo', 'Lateral Derecho', 
-                    'Mediocampista Defensivo', 'Mediocampista Central', 'Mediocampista Ofensivo',
-                    'Extremos', 'Delantero']
+        positions = list(POSITION_PATTERNS.keys())
         selected_positions = st.multiselect('Posiciones:', positions)
     
     with st.sidebar:
@@ -1175,16 +1071,11 @@ def create_scatter_plot():
     if selected_foot != 'Todos':
         filtered_df = filtered_df[filtered_df['Foot'] == selected_foot]
 
-    position_filters = {
-        'Portero': 'GK', 'Defensa': 'CB', 'Lateral Izquierdo': 'LB|LWB',
-        'Lateral Derecho': 'RB|RWB', 'Mediocampista Defensivo': 'DMF',
-        'Mediocampista Central': 'CMF', 'Mediocampista Ofensivo': 'AMF',
-        'Extremos': 'RW|LW|LWF|RWF', 'Delantero': 'CF'
-    }
-    
+    # Filtrar por posiciones seleccionadas
     if selected_positions:
-        position_pattern = '|'.join([position_filters[pos] for pos in selected_positions])
-        filtered_df = filtered_df[filtered_df['Position'].str.contains(position_pattern, na=False)]
+        position_patterns = [POSITION_PATTERNS[pos] for pos in selected_positions]
+        position_pattern = '|'.join(position_patterns)
+        filtered_df = filtered_df[filtered_df['Primary position'].str.contains(position_pattern, na=False)]
 
     numeric_cols = filtered_df.select_dtypes(include=[np.number]).columns.tolist()
 
@@ -1245,10 +1136,6 @@ def create_scatter_plot():
     
     st.plotly_chart(fig, use_container_width=True)
 
-
-###################################### RADAR #############################################################################################################################################
-
-
 def radar_page():
     st.write("PERCENTILES ⚽️")
 
@@ -1268,30 +1155,13 @@ def radar_page():
             filtered_data = data[(data["Season"] == selected_season) & (data["Competition"] == selected_competition)]
 
         # Seleccionar la posición en la barra lateral
-        selected_position = st.sidebar.selectbox("Selecciona la posición", list(metrics_by_position.keys()))
+        selected_position = st.sidebar.selectbox("Selecciona la posición", list(METRICS_BY_POSITION.keys()))
 
         # Filtrar los jugadores según la posición seleccionada
-        if selected_position == 'Portero':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('GK', na=False)]
-        elif selected_position == 'Defensa':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('CB', na=False)]
-        elif selected_position == 'Lateral Izquierdo':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('LB|LWB', na=False)]
-        elif selected_position == 'Lateral Derecho':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('RB|RWB', na=False)]
-        elif selected_position == 'Mediocampista Defensivo':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('DMF', na=False)]
-        elif selected_position == 'Mediocampista Central':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('CMF', na=False)]
-        elif selected_position == 'Mediocampista Ofensivo':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('AMF', na=False)]
-        elif selected_position == 'Extremos':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('RW|LW|LWF|RWF', na=False)]
-        elif selected_position == 'Delantero':
-            filtered_data = filtered_data[filtered_data['Primary position'].str.contains('CF', na=False)]
-        else:
-            filtered_data = filtered_data
-
+        position_pattern = POSITION_PATTERNS.get(selected_position, "")
+        if position_pattern:
+            filtered_data = filtered_data[filtered_data['Primary position'].str.contains(position_pattern, na=False)]
+        
         # Agregar slider para minutos jugados en la barra lateral
         min_minutes = int(filtered_data['Minutes played'].min())
         max_minutes = int(filtered_data['Minutes played'].max())
@@ -1313,7 +1183,7 @@ def radar_page():
 
             if not jugador_data.empty:
                 # Obtener todas las métricas disponibles para la posición
-                all_metrics = metrics_by_position[selected_position]
+                all_metrics = METRICS_BY_POSITION[selected_position]
                 
                 # Crear un diccionario con las métricas agrupadas por categoría
                 metrics_by_category = {}
@@ -1373,12 +1243,7 @@ def radar_page():
                                 break
 
                     # Definir los colores para cada categoría
-                    category_colors = {
-                        "General": "#1A78CF",      # Azul
-                        "Defensa": "#FF9300",      # Naranja
-                        "Pases": "#FF6347",        # Rojo
-                        "Ataque": "#32CD32"        # Verde
-                    }
+                    category_colors = CATEGORY_COLORS
 
                     # Asignar colores a las rebanadas según las categorías
                     slice_colors = [category_colors[cat] for cat in categories]
@@ -1445,10 +1310,6 @@ def radar_page():
     else:
         st.warning("Cargando los datos...")
 
-
-################################# BEESWARMS ##################################################################################################################################################
-
-
 def create_beeswarm_plot():
     # Utiliza los datos que ya tienes cargados en la sesión de Streamlit
     if "filtered_data" in st.session_state and not st.session_state["filtered_data"].empty:
@@ -1458,7 +1319,7 @@ def create_beeswarm_plot():
         return
 
     # Convierte las columnas numéricas a tipo float
-    numeric_columns = [col for col in data.columns if col in [metric[0] for metrics in metrics_by_position.values() for metric in metrics]]
+    numeric_columns = [col for col in data.columns if col in [metric[0] for metrics in METRICS_BY_POSITION.values() for metric in metrics]]
     data[numeric_columns] = data[numeric_columns].astype(float)
 
     # Pide al usuario que seleccione la temporada
@@ -1485,38 +1346,21 @@ def create_beeswarm_plot():
         filtered_data = filtered_data[filtered_data["Team within selected timeframe"] == selected_team]
 
     # Pide al usuario que seleccione la posición
-    position_options = list(metrics_by_position.keys())
+    position_options = list(METRICS_BY_POSITION.keys())
     selected_position = st.selectbox("Selecciona la posición", position_options, key="position_selectbox")
 
-    # Filtra los datos por posición seleccionada
-    if selected_position == 'Portero':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('GK', na=False)]
-    elif selected_position == 'Defensa':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('CB', na=False)]
-    elif selected_position == 'Lateral Izquierdo':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('LB|LWB', na=False)]
-    elif selected_position == 'Lateral Derecho':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('RB|RWB', na=False)]
-    elif selected_position == 'Mediocampista Defensivo':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('DMF', na=False)]
-    elif selected_position == 'Mediocampista Central':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('CMF', na=False)]
-    elif selected_position == 'Mediocampista Ofensivo':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('AMF', na=False)]
-    elif selected_position == 'Extremos':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('RW|LW|LWF|RWF', na=False)]
-    elif selected_position == 'Delantero':
-        filtered_data = filtered_data[filtered_data['Position'].str.contains('CF', na=False)]
-    else:
-        filtered_data = data
+    # Filtrar los datos por posición seleccionada
+    position_pattern = POSITION_PATTERNS.get(selected_position, "")
+    if position_pattern:
+        filtered_data = filtered_data[filtered_data['Primary position'].str.contains(position_pattern, na=False)]
 
     # Pide al usuario que seleccione el jugador a destacar
     player_options = filtered_data['Player'].unique()
     selected_player = st.selectbox("Selecciona el jugador a destacar", player_options, key="player_selectbox")
 
     # Selecciona la métrica a visualizar
-    if selected_position in metrics_by_position:
-        position_metrics = [metric[0] for metric in metrics_by_position[selected_position]]
+    if selected_position in METRICS_BY_POSITION:
+        position_metrics = [metric[0] for metric in METRICS_BY_POSITION[selected_position]]
         selected_metric = st.selectbox("Selecciona la métrica a visualizar:", position_metrics, key="metric_selectbox")
     else:
         st.warning(f"No se encontraron métricas definidas para la posición '{selected_position}'.")
@@ -1558,9 +1402,6 @@ def create_beeswarm_plot():
     plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
     st.image(buf, use_column_width=True)
 
-
-##################################### RADAR ###########################################################################################
-
 def create_radar_plot():
     if 'filtered_data' not in st.session_state:
         return
@@ -1593,19 +1434,13 @@ def create_radar_plot():
         filtered_df = filtered_df[filtered_df['Team within selected timeframe'].isin(selected_teams)]
 
     with st.sidebar:
-        positions = ['Todas', 'Portero', 'Defensa', 'Lateral Izquierdo', 'Lateral Derecho', 
-                    'Mediocampista Defensivo', 'Mediocampista Central', 'Mediocampista Ofensivo',
-                    'Extremos', 'Delantero']
+        positions = ['Todas'] + list(POSITION_PATTERNS.keys())
         selected_position = st.selectbox('Posición:', positions, key='radar_plot_pos')
 
     if selected_position != 'Todas':
-        position_filters = {
-            'Portero': 'GK', 'Defensa': 'CB', 'Lateral Izquierdo': 'LB|LWB',
-            'Lateral Derecho': 'RB|RWB', 'Mediocampista Defensivo': 'DMF',
-            'Mediocampista Central': 'CMF', 'Mediocampista Ofensivo': 'AMF',
-            'Extremos': 'RW|LW|LWF|RWF', 'Delantero': 'CF'
-        }
-        filtered_df = filtered_df[filtered_df['Position'].str.contains(position_filters[selected_position], na=False)]
+        position_pattern = POSITION_PATTERNS.get(selected_position, "")
+        if position_pattern:
+            filtered_df = filtered_df[filtered_df['Primary position'].str.contains(position_pattern, na=False)]
 
     with st.sidebar:
         min_minutes = int(filtered_df['Minutes played'].min())
@@ -1651,16 +1486,6 @@ def create_radar_plot():
             plt.title('Comparación de métricas normalizadas de jugadores', fontsize=14, pad=20)
             st.pyplot(fig)
 
-################################################################################################################################
-
-import streamlit as st
-import pandas as pd
-import requests
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import percentileofscore
-
-# 🔹 Función para la pestaña de informe de scouting con Gemini y comparación con jugadores de la misma liga
 def scouting_report_page():
     st.title("📄 Generar Informe de Scouting con Gemini")
 
@@ -1692,24 +1517,18 @@ def scouting_report_page():
             (df_temporada["Primary position"] == posicion_original)
         ]
 
-        # 🔹 Mapeo de posiciones para el diccionario `metrics_by_position`
-        position_mapping = {
-            'GK': 'Portero',
-            'CB': 'Defensa',
-            'LB': 'Lateral Izquierdo', 'LWB': 'Lateral Izquierdo',
-            'RB': 'Lateral Derecho', 'RWB': 'Lateral Derecho',
-            'DMF': 'Mediocampista Defensivo',
-            'CMF': 'Mediocampista Central',
-            'AMF': 'Mediocampista Ofensivo',
-            'RW': 'Extremos', 'LW': 'Extremos', 'LWF': 'Extremos', 'RWF': 'Extremos',
-            'CF': 'Delantero'
-        }
+        # 🔹 Mapeo de posiciones para el diccionario `METRICS_BY_POSITION`
+        position_mapping = {key: pos for pos, pattern in POSITION_PATTERNS.items() for key in pattern.split('|')}
 
-        # Convertir la posición a la nomenclatura del diccionario `metrics_by_position`
-        posicion_jugador = next((position_mapping[key] for key in position_mapping if key in posicion_original), "Desconocida")
+        # Convertir la posición a la nomenclatura del diccionario `METRICS_BY_POSITION`
+        posicion_jugador = "Desconocida"
+        for pattern, position in position_mapping.items():
+            if pattern in posicion_original:
+                posicion_jugador = position
+                break
 
-        if posicion_jugador in metrics_by_position:
-            metricas_relevantes = [metrica[0] for metrica in metrics_by_position[posicion_jugador]]
+        if posicion_jugador in METRICS_BY_POSITION:
+            metricas_relevantes = [metrica[0] for metrica in METRICS_BY_POSITION[posicion_jugador]]
         else:
             metricas_relevantes = ["Matches played", "Minutes played"]
 
@@ -1779,9 +1598,32 @@ def scouting_report_page():
     else:
         st.warning("⚠️ Carga los datos primero desde la pestaña principal.")
 
+# Sistema de navegación mejorado
+def create_navigation():
+    st.sidebar.title("Navegación")
+    
+    # Definir categorías de páginas
+    categories = {
+        "Datos": ["Cargar Datos 🏆", "Buscar 🔎"],
+        "Análisis": ["Comparar ⚖️", "Similitud 🥇🥈🥉", "Densidad 📊"],
+        "Visualizaciones": ["Dispersión - Análisis 📈", "Percentiles 🎯", "Besswarms ↔️", "Radar Comparativo ⚔️"],
+        "Informes": ["Informe Scout911 📄"]
+    }
+    
+    # Crear un acordeón por categoría
+    selected_page = None
+    
+    # Primero, seleccionar categoría
+    category_options = list(categories.keys())
+    selected_category = st.sidebar.radio("Categorías", category_options)
+    
+    # Luego, mostrar páginas de la categoría seleccionada
+    page_options = categories[selected_category]
+    selected_page = st.sidebar.radio("Páginas", page_options)
+    
+    return selected_page
 
-###########################################################################################################################################
-
+# Diccionario de funciones de páginas
 tab_functions = {
     "Cargar Datos 🏆": main_page,
     "Buscar 🔎": search_page,
@@ -1795,6 +1637,26 @@ tab_functions = {
     "Informe Scout911 📄": scouting_report_page,
 }
 
-tab_selection = st.sidebar.radio("", list(tab_functions.keys()))
-tab_functions[tab_selection]()
+# Función principal
+def main():
+    # Mostrar información de versión en la barra lateral
+    st.sidebar.markdown("---")
+    st.sidebar.info(
+        f"{APP_CONFIG.get('title', 'Deportivo Garcilaso ⚽️')}\n\n"
+        f"Versión: {APP_CONFIG.get('version', '2.0.0')}\n"
+        f"Desarrollado por: {APP_CONFIG.get('author', 'Deportivo Garcilaso')}\n"
+        f"Última actualización: {APP_CONFIG.get('last_update', 'Marzo 2025')}"
+    )
+    
+    # Navegación mejorada
+    selected_tab = create_navigation()
+    
+    # Ejecutar la página seleccionada
+    if selected_tab in tab_functions:
+        tab_functions[selected_tab]()
+    else:
+        main_page()  # Página por defecto
 
+# Ejecutar la aplicación
+if __name__ == "__main__":
+    main()
