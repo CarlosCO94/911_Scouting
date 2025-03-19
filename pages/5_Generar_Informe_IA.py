@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
-from utils.data_laloader import verificar_datos_cargados, obtener_datos
+from utils.data_loader import verificar_datos_cargados, obtener_datos
 from utils.data_processing import identificar_fortalezas_debilidades, encontrar_jugadores_similares
 from utils.visualization import grafico_radar_perfil
 import config
