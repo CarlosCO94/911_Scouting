@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.data_laloader import cargar_datos_github, cargar_datos_local
+from utils.data_loader import cargar_datos_github, cargar_datos_local
 
 # Configuración de la página
 st.set_page_config(
