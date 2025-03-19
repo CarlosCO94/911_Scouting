@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.data_laloader import verificar_datos_cargados, obtener_datos
+from utils.data_loader import verificar_datos_cargados, obtener_datos
 from utils.data_processing import calcular_percentiles
 from utils.visualization import grafico_percentiles_barras, grafico_distribucion_metrica
 import config
