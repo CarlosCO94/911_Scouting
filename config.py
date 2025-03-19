@@ -1,6 +1,37 @@
-
 # config.py
-# Archivo de configuración centralizado para la aplicación de Deportivo Garcilaso
+# Configuración para la aplicación de Deportivo Garcilaso
+
+# URL base para todos los archivos
+BASE_URL = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Ligas_Parquet"
+
+# Las temporadas disponibles
+SEASONS = [
+    "2020", "2021", "2022", "2023", "2024", "2025", 
+    "20-21", "21-22", "22-23", "23-24", "24-25"
+]
+
+# Crear URLs base para cada temporada
+BASE_URLS = {season: f"{BASE_URL}/{season}" for season in SEASONS}
+
+# Lista de archivo fallback (por si falla la detección automática)
+FILE_NAMES_FALLBACK = {
+    "2023": ["Peruvian Liga 1 2023.parquet"],
+    "2024": ["Peruvian Liga 1 2024.parquet"]
+}
+
+# Columnas esenciales para cargar (optimización de memoria)
+COMMON_COLUMNS = [
+    "Player",
+    "Team within selected timeframe",
+    "Passport country",
+    "Foot",
+    "Age",
+    "Minutes played",
+    "Primary position",
+    "Contract expires",
+    "Position",
+    "Matches played"
+]
 
 # Diccionario de métricas por posición
 METRICS_BY_POSITION = {
@@ -18,52 +49,78 @@ METRICS_BY_POSITION = {
         ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
         ("Accurate long passes, %", "Pases largos precisos, %", "Pases")
     ],
-    # [resto de posiciones se mantiene igual...]
-}
-
-# URLs base por temporada
-BASE_URLS = {
-    "2020": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2020",
-    "20-21": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/20-21",
-    "2021": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2021",
-    "21-22": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/21-22",
-    "2022": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2022",
-    "22-23": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/22-23",
-    "2023": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2023",
-    "23-24": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/23-24",
-    "2024": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2024",
-    "24-25": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/24-25",
-    "2025": "https://raw.githubusercontent.com/CarlosCO94/Scout_911/main/data/2025"
-}
-
-# Lista fallback de archivos por temporada (solo para referencia)
-# En operación normal, se usará la función get_available_leagues() de league_detector.py
-FILE_NAMES_FALLBACK = {
-    "2025": [
-        "Argentina Liga Profesional de Futbol 2025.parquet",
+    'Defensa': [
+        ("Matches played", "Partidos jugados", "General"),
+        ("Minutes played", "Minutos jugados", "General"),
+        ("Aerial duels per 90", "Duelos aéreos por 90 minutos", "Defensa"),
+        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
+        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
+        ("Duels won, %", "Duelos ganados, %", "Defensa"),
+        ("Sliding tackles per 90", "Entradas deslizantes por 90 minutos", "Defensa"),
+        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
+        ("Key passes per 90", "Pases clave por 90 minutos", "Pases"),
+        ("Short / medium passes per 90", "Pases cortos/medios por 90 minutos", "Pases"),
+        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
+        ("Long passes per 90", "Pases largos por 90 minutos", "Pases"),
+        ("Passes per 90", "Pases por 90 minutos", "Pases"),
+        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
+        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
+        ("Accurate back passes, %", "Pases precisos hacia atrás, %", "Pases"),
+        ("Accurate long passes, %", "Pases largos precisos, %", "Pases"),
+        ("Accurate passes, %", "Pases precisos, %", "Pases"),
+        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
+        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque")
     ],
-    "2024": [
-        "Argentina Copa de la Liga 2024.parquet",
-        "Peruvian Liga 1 2024.parquet",
-        "Brasileirao 2024.parquet",
-        "MLS 2024.parquet",
+    'Lateral Izquierdo': [
+        ("Matches played", "Partidos jugados", "General"),
+        ("Minutes played", "Minutos jugados", "General"),
+        ("Successful defensive actions per 90", "Acciones defensivas exitosas por 90 minutos", "Defensa"),
+        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
+        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
+        ("Defensive duels per 90", "Duelos defensivos por 90 minutos", "Defensa"),
+        ("Duels won, %", "Duelos ganados, %", "Defensa"),
+        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
+        ("Passes per 90", "Pases por 90 minutos", "Pases"),
+        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
+        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
+        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
+        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
+        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
+        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
+        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
+        ("xA per 90", "xA por 90 minutos", "Pases"),
+        ("Successful attacking actions per 90", "Acciones ofensivas exitosas por 90 minutos", "Ataque"),
+        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
+        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque"),
+        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque"),
+        ("Third assists per 90", "Terceras asistencias por 90 minutos", "Ataque")
     ],
-    # [otras temporadas...]
+    'Lateral Derecho': [
+        ("Matches played", "Partidos jugados", "General"),
+        ("Minutes played", "Minutos jugados", "General"),
+        ("Successful defensive actions per 90", "Acciones defensivas exitosas por 90 minutos", "Defensa"),
+        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
+        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
+        ("Defensive duels per 90", "Duelos defensivos por 90 minutos", "Defensa"),
+        ("Duels won, %", "Duelos ganados, %", "Defensa"),
+        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
+        ("Passes per 90", "Pases por 90 minutos", "Pases"),
+        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
+        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
+        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
+        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
+        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
+        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
+        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
+        ("xA per 90", "xA por 90 minutos", "Pases"),
+        ("Successful attacking actions per 90", "Acciones ofensivas exitosas por 90 minutos", "Ataque"),
+        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
+        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque"),
+        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque"),
+        ("Third assists per 90", "Terceras asistencias por 90 minutos", "Ataque")
+    ],
+    # ... resto de posiciones ...
 }
-
-# Columnas esenciales para cargar (optimización de memoria)
-COMMON_COLUMNS = [
-    "Player",
-    "Team within selected timeframe",
-    "Passport country",
-    "Foot",
-    "Age",
-    "Minutes played",
-    "Primary position",
-    "Contract expires",
-    "Position",
-    "Matches played",
-]
 
 # Mapeo de posiciones para filtros
 POSITION_PATTERNS = {
@@ -84,17 +141,14 @@ CHART_COLORS = {
     "secondary": "#FF9300",    # Naranja secundario
     "tertiary": "#FF6347",     # Rojo terciario
     "quaternary": "#32CD32",   # Verde cuaternario
-    "highlight": "#E74C3C",    # Rojo resaltado
-    "background": "#F8F9FA",   # Fondo gris claro
-    "text": "#333333",         # Texto gris oscuro
 }
 
 # Colores por categoría de métrica
 CATEGORY_COLORS = {
-    "General": CHART_COLORS["primary"],       # Azul
-    "Defensa": CHART_COLORS["secondary"],     # Naranja
-    "Pases": CHART_COLORS["tertiary"],        # Rojo
-    "Ataque": CHART_COLORS["quaternary"]      # Verde
+    "General": "#1A78CF",      # Azul
+    "Defensa": "#FF9300",      # Naranja
+    "Pases": "#FF6347",        # Rojo
+    "Ataque": "#32CD32"        # Verde
 }
 
 # Configuración de la aplicación
@@ -102,13 +156,8 @@ APP_CONFIG = {
     "title": "Deportivo Garcilaso ⚽️",
     "icon": "⚽🐈‍⬛🇵🇪📊",
     "layout": "wide",
-    "theme": {
-        "primaryColor": CHART_COLORS["primary"],
-        "backgroundColor": CHART_COLORS["background"],
-        "textColor": CHART_COLORS["text"],
-    },
     "version": "2.0.0",
     "author": "Deportivo Garcilaso",
     "last_update": "Marzo 2025",
-    "auto_detect_leagues": True  # Nueva opción para activar/desactivar detección automática
+    "auto_detect_leagues": True
 }
