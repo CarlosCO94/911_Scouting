@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.data_laloader import verificar_datos_cargados, obtener_datos
+from utils.data_loader import verificar_datos_cargados, obtener_datos
 from utils.data_processing import encontrar_jugadores_similares, comparar_jugadores_datos
 from utils.visualization import grafico_similitud_barras, grafico_radar_comparacion
 import config
