@@ -1,163 +1,174 @@
-# config.py
-# Configuración para la aplicación de Deportivo Garcilaso
+# Configuración general de la aplicación
 
-# URL base para todos los archivos
-BASE_URL = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main/Ligas_Parquet"
+# Información del repositorio de GitHub
+GITHUB_REPO = "https://github.com/CarlosCO94/911_Scouting"
+GITHUB_RAW_BASE = "https://raw.githubusercontent.com/CarlosCO94/911_Scouting/main"
+PARQUET_DIR = "Ligas_Parquet"
 
-# Las temporadas disponibles
-SEASONS = [
-    "2020", "2021", "2022", "2023", "2024", "2025", 
-    "20-21", "21-22", "22-23", "23-24", "24-25"
-]
-
-# Crear URLs base para cada temporada
-BASE_URLS = {season: f"{BASE_URL}/{season}" for season in SEASONS}
-
-# Lista de archivo fallback (por si falla la detección automática)
-FILE_NAMES_FALLBACK = {
-    "2023": ["Peruvian Liga 1 2023.parquet"],
-    "2024": ["Peruvian Liga 1 2024.parquet"]
-}
-
-# Columnas esenciales para cargar (optimización de memoria)
-COMMON_COLUMNS = [
-    "Player",
-    "Team within selected timeframe",
-    "Passport country",
-    "Foot",
-    "Age",
-    "Minutes played",
-    "Primary position",
-    "Contract expires",
-    "Position",
-    "Matches played"
-]
-
-# Diccionario de métricas por posición
-METRICS_BY_POSITION = {
-    'Portero': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Conceded goals per 90", "Goles concedidos por 90 minutos", "Defensa"),
-        ("xG against per 90", "xG en contra por 90 minutos", "Defensa"),
-        ("Prevented goals per 90", "Goles evitados por 90 minutos", "Defensa"),
-        ("Save rate, %", "Tasa de paradas, %", "Defensa"),
-        ("Exits per 90", "Salidas por 90 minutos", "Defensa"),
-        ("Aerial duels per 90", "Duelos aéreos por 90 minutos", "Defensa"),
-        ("Back passes received as GK per 90", "Pases atrás recibidos como portero por 90 minutos", "Pases"),
-        ("Accurate passes, %", "Pases precisos, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases")
+# Columnas disponibles para cada tipo de análisis
+DEFAULT_COLUMNS = {
+    # Columna que contiene los nombres de los jugadores
+    "nombres": "Player",
+    
+    # Columnas de identificación y contexto
+    "info": [
+        "Player", "Team", "Position", "Age", "Market value", 
+        "Foot", "Height", "Weight", "Birth country"
     ],
-    'Defensa': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Aerial duels per 90", "Duelos aéreos por 90 minutos", "Defensa"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Sliding tackles per 90", "Entradas deslizantes por 90 minutos", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Key passes per 90", "Pases clave por 90 minutos", "Pases"),
-        ("Short / medium passes per 90", "Pases cortos/medios por 90 minutos", "Pases"),
-        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
-        ("Long passes per 90", "Pases largos por 90 minutos", "Pases"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate back passes, %", "Pases precisos hacia atrás, %", "Pases"),
-        ("Accurate long passes, %", "Pases largos precisos, %", "Pases"),
-        ("Accurate passes, %", "Pases precisos, %", "Pases"),
-        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
-        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque")
+    
+    # Columnas para gráficos de radar ofensivos
+    "radar_ofensivo": [
+        "Goals per 90", "Assists per 90", "xG per 90", "xA per 90", 
+        "Shots per 90", "Shots on target, %", "Dribbles per 90", 
+        "Successful dribbles, %", "Progressive runs per 90"
     ],
-    'Lateral Izquierdo': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Successful defensive actions per 90", "Acciones defensivas exitosas por 90 minutos", "Defensa"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Defensive duels per 90", "Duelos defensivos por 90 minutos", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
-        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful attacking actions per 90", "Acciones ofensivas exitosas por 90 minutos", "Ataque"),
-        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
-        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque"),
-        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque"),
-        ("Third assists per 90", "Terceras asistencias por 90 minutos", "Ataque")
+    
+    # Columnas para gráficos de radar defensivos
+    "radar_defensivo": [
+        "Defensive duels per 90", "Defensive duels won, %", 
+        "Aerial duels per 90", "Aerial duels won, %", 
+        "Interceptions per 90", "Shots blocked per 90", 
+        "Successful defensive actions per 90", "Sliding tackles per 90"
     ],
-    'Lateral Derecho': [
-        ("Matches played", "Partidos jugados", "General"),
-        ("Minutes played", "Minutos jugados", "General"),
-        ("Successful defensive actions per 90", "Acciones defensivas exitosas por 90 minutos", "Defensa"),
-        ("Aerial duels won, %", "Duelos aéreos ganados, %", "Defensa"),
-        ("Defensive duels won, %", "Duelos defensivos ganados, %", "Defensa"),
-        ("Defensive duels per 90", "Duelos defensivos por 90 minutos", "Defensa"),
-        ("Duels won, %", "Duelos ganados, %", "Defensa"),
-        ("Interceptions per 90", "Intercepciones por 90 minutos", "Defensa"),
-        ("Passes per 90", "Pases por 90 minutos", "Pases"),
-        ("Forward passes per 90", "Pases hacia adelante por 90 minutos", "Pases"),
-        ("Accurate passes to penalty area, %", "Pases precisos al área penal, %", "Pases"),
-        ("Received passes per 90", "Pases recibidos por 90 minutos", "Pases"),
-        ("Accurate passes to final third, %", "Pases precisos al tercio final, %", "Pases"),
-        ("Accurate through passes, %", "Pases filtrados precisos, %", "Pases"),
-        ("Accurate forward passes, %", "Pases precisos hacia adelante, %", "Pases"),
-        ("Accurate progressive passes, %", "Pases progresivos precisos, %", "Pases"),
-        ("xA per 90", "xA por 90 minutos", "Pases"),
-        ("Successful attacking actions per 90", "Acciones ofensivas exitosas por 90 minutos", "Ataque"),
-        ("Accelerations per 90", "Aceleraciones por 90 minutos", "Ataque"),
-        ("Progressive runs per 90", "Carreras progresivas por 90 minutos", "Ataque"),
-        ("Crosses to goalie box per 90", "Centros al área por 90 minutos", "Ataque"),
-        ("Third assists per 90", "Terceras asistencias por 90 minutos", "Ataque")
+    
+    # Columnas para gráficos de radar de pases
+    "radar_pases": [
+        "Passes per 90", "Accurate passes, %", "Key passes per 90", 
+        "Smart passes per 90", "Progressive passes per 90", 
+        "Crosses per 90", "Through passes per 90", "xA per 90"
     ],
-    # ... resto de posiciones ...
+    
+    # Columnas para gráficos de radar de porteros
+    "radar_porteros": [
+        "Save rate, %", "Shots against per 90", "Conceded goals per 90", 
+        "xG against per 90", "Prevented goals per 90", "Exits per 90"
+    ],
+    
+    # Columnas para comparación de jugadores ofensivos
+    "comparacion_ofensiva": [
+        "Goals per 90", "Non-penalty goals per 90", "xG per 90", 
+        "Shots per 90", "Shots on target, %", "Goal conversion, %", 
+        "Assists per 90", "xA per 90", "Dribbles per 90", 
+        "Successful dribbles, %", "Touches in box per 90", 
+        "Progressive runs per 90", "Accelerations per 90"
+    ],
+    
+    # Columnas para comparación de jugadores defensivos
+    "comparacion_defensiva": [
+        "Successful defensive actions per 90", "Defensive duels per 90", 
+        "Defensive duels won, %", "Aerial duels per 90", 
+        "Aerial duels won, %", "Sliding tackles per 90", 
+        "Shots blocked per 90", "Interceptions per 90", 
+        "Fouls per 90", "Yellow cards per 90"
+    ],
+    
+    # Columnas para comparación de pases/creación
+    "comparacion_pases": [
+        "Passes per 90", "Accurate passes, %", "Forward passes per 90", 
+        "Accurate forward passes, %", "Long passes per 90", 
+        "Accurate long passes, %", "xA per 90", "Shot assists per 90", 
+        "Smart passes per 90", "Key passes per 90", 
+        "Passes to final third per 90", "Passes to penalty area per 90", 
+        "Deep completions per 90", "Progressive passes per 90"
+    ],
+    
+    # Columnas para comparación de porteros
+    "comparacion_porteros": [
+        "Conceded goals per 90", "Shots against per 90", "Save rate, %", 
+        "xG against per 90", "Prevented goals per 90", "Clean sheets", 
+        "Exits per 90", "Aerial duels per 90"
+    ],
+    
+    # Columnas para análisis de percentiles generales
+    "percentiles_general": [
+        "Goals per 90", "Assists per 90", "xG per 90", "xA per 90", 
+        "Shots per 90", "Shots on target, %", "Dribbles per 90", 
+        "Successful dribbles, %", "Successful defensive actions per 90", 
+        "Defensive duels won, %", "Aerial duels won, %", 
+        "Passes per 90", "Accurate passes, %", "Key passes per 90", 
+        "Progressive passes per 90"
+    ],
+    
+    # Columnas para análisis de percentiles ofensivos
+    "percentiles_ofensivos": [
+        "Goals per 90", "Non-penalty goals per 90", "xG per 90", 
+        "Head goals per 90", "Shots per 90", "Shots on target, %", 
+        "Goal conversion, %", "Touches in box per 90", 
+        "Accelerations per 90", "Offensive duels per 90", 
+        "Offensive duels won, %", "Progressive runs per 90"
+    ],
+    
+    # Columnas para análisis de percentiles de pases/creación
+    "percentiles_pases": [
+        "Assists per 90", "xA per 90", "Shot assists per 90", 
+        "Key passes per 90", "Smart passes per 90", 
+        "Passes to final third per 90", "Passes to penalty area per 90", 
+        "Through passes per 90", "Deep completions per 90", 
+        "Deep completed crosses per 90", "Progressive passes per 90",
+        "Crosses per 90", "Accurate crosses, %"
+    ],
+    
+    # Columnas para análisis de percentiles defensivos
+    "percentiles_defensivos": [
+        "Successful defensive actions per 90", "Defensive duels per 90", 
+        "Defensive duels won, %", "Aerial duels per 90", 
+        "Aerial duels won, %", "Sliding tackles per 90", 
+        "Shots blocked per 90", "Interceptions per 90"
+    ],
+    
+    # Columnas para análisis de percentiles de porteros
+    "percentiles_porteros": [
+        "Save rate, %", "Clean sheets", "Conceded goals per 90", 
+        "Shots against per 90", "xG against per 90", 
+        "Prevented goals per 90", "Exits per 90"
+    ]
 }
 
-# Mapeo de posiciones para filtros
-POSITION_PATTERNS = {
-    'Portero': 'GK', 
-    'Defensa': 'CB',
-    'Lateral Izquierdo': 'LB|LWB', 
-    'Lateral Derecho': 'RB|RWB',
-    'Mediocampista Defensivo': 'DMF', 
-    'Mediocampista Central': 'CMF',
-    'Mediocampista Ofensivo': 'AMF', 
-    'Extremos': 'RW|LW|LWF|RWF',
-    'Delantero': 'CF'
+# Colores para gráficos
+COLORS = {
+    "primary": "#1f77b4",
+    "secondary": "#ff7f0e",
+    "tertiary": "#2ca02c",
+    "warning": "#d62728",
+    "info": "#9467bd"
 }
 
-# Colores para visualizaciones
-CHART_COLORS = {
-    "primary": "#1A78CF",      # Azul principal
-    "secondary": "#FF9300",    # Naranja secundario
-    "tertiary": "#FF6347",     # Rojo terciario
-    "quaternary": "#32CD32",   # Verde cuaternario
+# Categorías de jugadores
+PLAYER_CATEGORIES = {
+    "élite": 80,
+    "destacado": 60,
+    "promedio": 40,
+    "en desarrollo": 0
 }
 
-# Colores por categoría de métrica
-CATEGORY_COLORS = {
-    "General": "#1A78CF",      # Azul
-    "Defensa": "#FF9300",      # Naranja
-    "Pases": "#FF6347",        # Rojo
-    "Ataque": "#32CD32"        # Verde
+# Posiciones agrupadas para filtrado
+POSITION_GROUPS = {
+    "Porteros": ["GK", "Goalkeeper"],
+    "Defensas": ["CB", "RB", "LB", "RWB", "LWB", "Defender"],
+    "Centrocampistas": ["CM", "CDM", "CAM", "RM", "LM", "Midfielder"],
+    "Atacantes": ["CF", "ST", "RW", "LW", "SS", "Forward", "Attacker"]
 }
 
-# Configuración de la aplicación
-APP_CONFIG = {
-    "title": "Deportivo Garcilaso ⚽️",
-    "icon": "⚽🐈‍⬛🇵🇪📊",
-    "layout": "wide",
-    "version": "2.0.0",
-    "author": "Deportivo Garcilaso",
-    "last_update": "Marzo 2025",
-    "auto_detect_leagues": True
+# Mappings de columnas por posición
+POSITION_MAPPINGS = {
+    "Porteros": {
+        "radar": "radar_porteros",
+        "comparacion": "comparacion_porteros",
+        "percentiles": "percentiles_porteros"
+    },
+    "Defensas": {
+        "radar": "radar_defensivo",
+        "comparacion": "comparacion_defensiva",
+        "percentiles": "percentiles_defensivos"
+    },
+    "Centrocampistas": {
+        "radar": "radar_pases",
+        "comparacion": "comparacion_pases",
+        "percentiles": "percentiles_pases"
+    },
+    "Atacantes": {
+        "radar": "radar_ofensivo",
+        "comparacion": "comparacion_ofensiva",
+        "percentiles": "percentiles_ofensivos"
+    }
 }
