@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from utils.data_laloader import verificar_datos_cargados, obtener_datos
+from utils.data_loader import verificar_datos_cargados, obtener_datos
 from utils.visualization import grafico_radar_jugador
 import config
 
